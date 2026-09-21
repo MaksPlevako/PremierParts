@@ -244,4 +244,3 @@ UNFOLD = {
     },
 }
 
-FORMS_URLFIELD_ASSUME_HTTPS = True

@@ -93,3 +93,16 @@ def test_make_only(catalog):
     u = understand("тойота")
     assert u.make_id == catalog["camry70"].model.make_id
     assert u.model_ids == []
+
+
+def test_numeric_model_names_need_a_make(catalog):
+    from .factories import make_generation
+
+    make_generation("BMW", "3 E90", 2005, 2012)
+    focus = make_generation("Ford", "Focus 3 USA", 2015, 2018)
+
+    u = understand("фара ліва фокус 3")
+    assert u.model_ids == [focus.model_id]
+
+    bmw = understand("фара бмв 3")
+    assert bmw.make_id is not None and bmw.model_ids

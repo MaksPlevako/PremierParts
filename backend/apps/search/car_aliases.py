@@ -148,6 +148,8 @@ class CarAliasIndex:
                     continue
                 phrase = " ".join(tokens[pos : pos + size])
                 ids = self.family_aliases.get(phrase)
+                if ids and not result.make_id and (phrase.isdigit() or len(phrase) <= 2):
+                    continue  # «3», «6», «x5» are only model names once the make is known
                 if ids:
                     if result.make_id:
                         ids = {i for i in ids if self.models[i].make_id == result.make_id}

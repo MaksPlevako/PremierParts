@@ -154,8 +154,7 @@ def understood_car(u: Understood) -> dict | None:
     if u.model_ids:
         models = list(CarModel.objects.select_related("make").filter(id__in=u.model_ids))
         make = models[0].make
-        families = sorted({m.family or m.name for m in models})
-        label = models[0].name if len(models) == 1 else " / ".join(families)
+        label = _common_label([m.name for m in models]) or " / ".join(sorted({m.family or m.name for m in models}))
         return {
             "make": make.name,
             "make_slug": make.slug,
@@ -168,6 +167,17 @@ def understood_car(u: Understood) -> dict | None:
         make = Make.objects.get(id=u.make_id)
         return {"make": make.name, "make_slug": make.slug, "label": make.name, "full_label": make.name, "models": []}
     return None
+
+
+def _common_label(names: list[str]) -> str:
+    """Longest common word prefix: ['Passat B7', 'Passat B7 USA'] -> 'Passat B7'."""
+    split = [n.split() for n in names]
+    common = []
+    for words in zip(*split):
+        if len({w.lower() for w in words}) != 1:
+            break
+        common.append(words[0])
+    return " ".join(common)
 
 
 def understood_payload(u: Understood | None) -> dict | None:
@@ -249,7 +259,7 @@ class _Plan:
         return [c for c in self.structural + self.car + self.semantic + self.refine if c.field not in skip_fields]
 
 
-def _meili_run(plan: _Plan, params: ListingParams, category_parent: str | None) -> dict:
+def _meili_run(plan: _Plan, params: ListingParams, category_parent: str | None, extra: dict) -> dict:
     sort = _sort(params, bool(plan.text))
     main = {
         "q": plan.text,
@@ -258,6 +268,7 @@ def _meili_run(plan: _Plan, params: ListingParams, category_parent: str | None) 
         "page": params.page,
         "hitsPerPage": params.page_size,
         "attributesToRetrieve": ["id"],
+        **extra,
     }
     if sort:
         main["sort"] = sort
@@ -266,12 +277,14 @@ def _meili_run(plan: _Plan, params: ListingParams, category_parent: str | None) 
         "filter": [c.meili() for c in plan.all(skip_fields={"manufacturer_id"})],
         "facets": ["manufacturer_id"],
         "hitsPerPage": 0,
+        **extra,
     }
     others = {
         "q": plan.text,
         "filter": [c.meili() for c in plan.all(skip_fields={"side", "stock_status", "price"})],
         "facets": ["side", "stock_status", "price"],
         "hitsPerPage": 0,
+        **extra,
     }
     res_main, res_man, res_other = index.multi_search([main, manufacturers, others])
     stats = (res_other.get("facetStats") or {}).get("price") or {}
@@ -323,9 +336,9 @@ def _pg_run(plan: _Plan, params: ListingParams, category_parent: str | None) -> 
     }
 
 
-def _run(plan: _Plan, params: ListingParams, category_parent: str | None) -> tuple[dict, bool]:
+def _run(plan: _Plan, params: ListingParams, category_parent: str | None, extra: dict | None = None) -> tuple[dict, bool]:
     try:
-        return _meili_run(plan, params, category_parent), False
+        return _meili_run(plan, params, category_parent, extra or {}), False
     except Exception as exc:
         log.warning("meilisearch unavailable, falling back to postgres: %s", exc)
         return _pg_run(plan, params, category_parent), True
@@ -388,15 +401,16 @@ def query_products(params: ListingParams) -> dict:
     plan = _Plan(text=text, structural=structural, car=car_clauses, semantic=semantic, refine=_refine_clauses(params))
     result, degraded = _run(plan, params, category_parent)
     relaxed = False
-    if result["count"] == 0 and u and u.kind == "text":
-        for relaxed_plan in (
-            replace(plan, semantic=[c for c in plan.semantic if c.field == "category_ids"]),
-            replace(plan, semantic=[]),
-            replace(plan, semantic=[], car=[], text=u.raw) if car_source == "query" else None,
-        ):
-            if relaxed_plan is None:
-                continue
-            result, degraded = _run(relaxed_plan, params, category_parent)
+    if result["count"] == 0 and u and u.kind == "text" and (plan.semantic or car_source == "query"):
+        # 1) drop side/position; 2) plain text search over names (they often list several cars);
+        # 3) keep only the car
+        attempts = [
+            (replace(plan, semantic=[c for c in plan.semantic if c.field == "category_ids"]), {}),
+            (replace(plan, semantic=[], car=[] if car_source == "query" else plan.car, text=u.raw), {"matchingStrategy": "all"}),
+            (replace(plan, semantic=[]), {}),
+        ]
+        for relaxed_plan, extra in attempts:
+            result, degraded = _run(relaxed_plan, params, category_parent, extra)
             if result["count"]:
                 relaxed = True
                 if not relaxed_plan.car:
@@ -490,5 +504,6 @@ def suggest(q: str, car_generation_id: int | None = None) -> dict:
         "analogs": analogs,
         "categories": listing["facets"]["categories"][:6],
         "total": listing["count"],
+        "relaxed": listing["relaxed"],
         "degraded": listing["degraded"],
     }
