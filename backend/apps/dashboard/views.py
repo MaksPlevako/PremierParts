@@ -24,8 +24,8 @@ def dashboard_callback(request, context):
     today_stats = orders_today.aggregate(n=Count("id"), total=Sum("total"))
     week_stats = orders_week.aggregate(n=Count("id"), total=Sum("total"))
     products = Product.objects.aggregate(
-        active=Count("id", filter=Q(is_active=True)),
-        no_price=Count("id", filter=Q(is_active=True, price=0)),
+        active=Count("id", filter=Q(is_active=True), distinct=True),
+        no_price=Count("id", filter=Q(is_active=True, price=0), distinct=True),
         no_photo=Count("id", filter=Q(is_active=True, images__isnull=True), distinct=True),
     )
     new_vin = VinRequest.objects.filter(status=VinRequest.Status.NEW).count()

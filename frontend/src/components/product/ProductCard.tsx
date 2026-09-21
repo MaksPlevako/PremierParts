@@ -23,6 +23,7 @@ export function ProductCard({ product, priority = false }: { product: Card; prio
             fill
             sizes="(min-width: 1280px) 290px, (min-width: 768px) 30vw, 50vw"
             preload={priority}
+            loading={priority ? "eager" : "lazy"}
             className="object-cover transition-transform duration-700 ease-[var(--ease-lux)] group-hover:scale-[1.04]"
           />
         ) : (

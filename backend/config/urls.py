@@ -5,6 +5,7 @@ from django.views.static import serve
 
 admin.site.site_header = "Premier Parts"
 admin.site.site_title = "Premier Parts"
+admin.site.index_title = "Дашборд"
 
 urlpatterns = [
     path("admin/", admin.site.urls),

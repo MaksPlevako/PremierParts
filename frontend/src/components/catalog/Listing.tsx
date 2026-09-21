@@ -14,13 +14,13 @@ interface Props {
   data: ListingResult;
   path: string;
   searchParams: Record<string, string | undefined>;
-  categoryHref?: (slug: string) => string;
+  categoryHrefPrefix?: string;
   showCategories?: boolean;
   aside?: ReactNode;
   top?: ReactNode;
 }
 
-export async function Listing({ data, path, searchParams, categoryHref, showCategories = true, aside, top }: Props) {
+export async function Listing({ data, path, searchParams, categoryHrefPrefix, showCategories = true, aside, top }: Props) {
   const t = await getTranslations();
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_1fr] lg:gap-8">
@@ -29,7 +29,7 @@ export async function Listing({ data, path, searchParams, categoryHref, showCate
           facets={data.facets}
           priceRange={data.price_range}
           count={data.count}
-          categoryHref={categoryHref}
+          categoryHrefPrefix={categoryHrefPrefix}
           showCategories={showCategories}
         />
         {aside}

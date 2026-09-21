@@ -190,6 +190,8 @@ def parse_product(html: str, url: str) -> ParsedProduct:
         if slug and name:
             crumbs.append((name.get_text(strip=True), slug))
 
+    images = {u: None for u in images if "no_image" not in u.lower()}
+
     return ParsedProduct(
         url=url,
         slug=urlparse(url).path.rstrip("/").rsplit("/", 1)[-1],

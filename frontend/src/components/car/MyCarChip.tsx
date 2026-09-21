@@ -19,6 +19,7 @@ export function MyCarChip({ className }: { className?: string }) {
       <button
         type="button"
         onClick={openPicker}
+        aria-label={t("chooseCar")}
         className={cn(
           "inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[13px] font-semibold text-ink ring-1 ring-platinum-200 transition hover:ring-gold-400",
           className,

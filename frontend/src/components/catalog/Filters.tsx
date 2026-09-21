@@ -15,8 +15,8 @@ interface Props {
   facets: ListingResult["facets"];
   priceRange: ListingResult["price_range"];
   count: number;
-  /** Where category chips link to (the current listing path with ?category= for search, or /category/<slug>). */
-  categoryHref?: (slug: string) => string;
+  /** Category facet links are `${categoryHrefPrefix}${slug}` (a string, so it can cross the server/client boundary). */
+  categoryHrefPrefix?: string;
   showCategories?: boolean;
 }
 
@@ -33,7 +33,7 @@ function Check2({ checked }: { checked: boolean }) {
   );
 }
 
-function FilterBody({ facets, priceRange, categoryHref, showCategories = true }: Omit<Props, "count">) {
+function FilterBody({ facets, priceRange, categoryHrefPrefix, showCategories = true }: Omit<Props, "count">) {
   const t = useTranslations("catalog");
   const tStock = useTranslations("stock");
   const { params, update } = useQueryState();
@@ -53,14 +53,14 @@ function FilterBody({ facets, priceRange, categoryHref, showCategories = true }:
 
   return (
     <div className="flex flex-col">
-      {showCategories && facets.categories.length > 0 && categoryHref && (
+      {showCategories && facets.categories.length > 0 && categoryHrefPrefix && (
         <div className={group}>
           <p className={title}>{t("subcategories")}</p>
           <ul className="flex flex-col gap-0.5">
             {facets.categories.map((c) => (
               <li key={c.id}>
                 <Link
-                  href={categoryHref(c.slug)}
+                  href={`${categoryHrefPrefix}${c.slug}`}
                   className="flex items-center justify-between rounded-[9px] px-2 py-1.5 text-[14px] text-platinum-700 hover:bg-platinum-50 hover:text-ink"
                 >
                   <span className="truncate">{c.name}</span>

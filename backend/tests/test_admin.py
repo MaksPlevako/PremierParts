@@ -43,3 +43,13 @@ def test_changelists_render(admin_client, url):
 def test_product_change_form_renders(admin_client):
     product = make_product()
     assert admin_client.get(f"/admin/catalog/product/{product.id}/change/").status_code == 200
+
+
+def test_dashboard_counts_products_once(admin_client):
+    from apps.catalog.models import ProductImage
+
+    product = make_product()
+    ProductImage.objects.create(product=product, image="products/a.jpg")
+    ProductImage.objects.create(product=product, image="products/b.jpg")
+    response = admin_client.get("/admin/")
+    assert response.context["kpis"][3]["value"] == "1"

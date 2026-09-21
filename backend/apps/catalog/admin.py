@@ -69,8 +69,8 @@ class ProductAdmin(ModelAdmin, TranslationAdmin, ImportExportModelAdmin):
     resource_classes = [ProductResource]
     import_form_class = ImportForm
     export_form_class = ExportForm
-    list_display = ("thumb", "name", "sku", "manufacturer", "category", "price", "stock_status", "is_featured", "is_active")
-    list_display_links = ("thumb", "name")
+    list_display = ("product", "manufacturer", "category", "price", "stock_status", "is_featured", "is_active")
+    list_display_links = ("product",)
     list_editable = ("price", "stock_status")
     list_filter = (
         ("category", RelatedDropdownFilter),
@@ -99,10 +99,12 @@ class ProductAdmin(ModelAdmin, TranslationAdmin, ImportExportModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("category", "manufacturer").prefetch_related("images")
 
-    @display(description=_("Фото"), image=True)
-    def thumb(self, obj):
+    @display(description=_("Товар"), header=True, ordering="name_uk")
+    def product(self, obj):
         first = next(iter(obj.images.all()), None)
-        return first.image.url if first and first.image else None
+        subtitle = " · ".join(filter(None, [obj.sku, obj.get_stock_status_display()]))
+        image = {"path": first.image.url, "width": 64, "height": 48, "squared": True} if first and first.image else None
+        return [obj.name, subtitle, None, image] if image else [obj.name, subtitle]
 
     @action(description=_("Позначити як хіт продажу"))
     def make_featured(self, request, queryset):

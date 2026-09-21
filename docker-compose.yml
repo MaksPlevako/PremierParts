@@ -52,6 +52,8 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        BACKEND_INTERNAL_URL: http://backend:8000
     env_file: .env
     environment:
       BACKEND_INTERNAL_URL: http://backend:8000

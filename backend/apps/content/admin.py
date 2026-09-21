@@ -26,8 +26,8 @@ class SiteSettingsAdmin(ModelAdmin, TranslationAdmin):
 
 @admin.register(Banner)
 class BannerAdmin(ModelAdmin, TranslationAdmin):
-    list_display = ("preview", "title", "placement", "theme", "starts_at", "ends_at", "sort", "is_active")
-    list_display_links = ("preview", "title")
+    list_display = ("banner", "placement", "theme", "starts_at", "ends_at", "sort", "is_active")
+    list_display_links = ("banner",)
     list_editable = ("sort", "is_active")
     list_filter = ("placement", "theme", "is_active")
     search_fields = ("title_uk", "subtitle_uk")
@@ -37,9 +37,10 @@ class BannerAdmin(ModelAdmin, TranslationAdmin):
         (_("Показ"), {"fields": (("starts_at", "ends_at"), ("sort", "is_active"))}),
     )
 
-    @display(description=_("Прев'ю"), image=True)
-    def preview(self, obj):
-        return obj.image.url if obj.image else None
+    @display(description=_("Банер"), header=True)
+    def banner(self, obj):
+        image = {"path": obj.image.url, "width": 72, "height": 48} if obj.image else None
+        return [obj.title, obj.subtitle, None, image] if image else [obj.title, obj.subtitle]
 
 
 @admin.register(Promotion)

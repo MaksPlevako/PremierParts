@@ -202,3 +202,11 @@ docker compose exec backend python manage.py seed_demo
 docker compose exec backend python manage.py reindex_search
 # сайт: http://localhost:8080   адмінка: http://localhost:8080/admin
 ```
+
+## 13. Відхилення, прийняті під час реалізації
+
+- `market` (EU/USA/Asia) зберігається на `CarModel`, а не на `Generation`: ринок записаний у назві моделі старого сайту («Passat B7 USA»), а серія має лише роки. У `Generation` є властивість `market`.
+- Next.js 16: `middleware.ts` → `src/proxy.ts`. Вебхук ревалідації викликає `revalidateTag(tag, { expire: 0 })`, щоб правки з адмінки було видно при наступному перегляді, а не після stale-while-revalidate.
+- Усі сторінки рендеряться на запит (`connection()` у лейауті), а дані кешуються тегами у `fetch`. Так Docker-збірці не потрібен запущений бекенд.
+- Ревалідація з Django йде у фоновому потоці, щоб збереження в адмінці не чекало на Next.js. Під час імпорту вона вимкнена (`suppress_revalidation`).
+- Плейсхолдер `no_image.png` старого сайту не імпортується як фото товару.

@@ -1,0 +1,15 @@
+import { chromium } from "@playwright/test";
+const out = process.argv[2];
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await p.goto("http://localhost:8080/admin/login/");
+await p.fill("#id_username", "admin");
+await p.fill("#id_password", "PremierDemo2026");
+await p.click("button[type=submit]");
+await p.waitForLoadState("networkidle");
+await p.screenshot({ path: `${out}/adm_dash.png` });
+await p.goto("http://localhost:8080/admin/catalog/product/");
+await p.waitForLoadState("networkidle");
+await p.screenshot({ path: `${out}/adm_products.png` });
+await b.close();
+console.log("ok");

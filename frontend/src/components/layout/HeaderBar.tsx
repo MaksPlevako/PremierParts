@@ -68,7 +68,7 @@ export function HeaderBar({ categories, phone }: { categories: CategoryNode[]; p
             <Menu className="size-5" />
           </button>
 
-          <Link href="/" className="shrink-0" aria-label="Premier Parts — на головну">
+          <Link href="/" className="shrink-0" title="На головну">
             <Logo />
           </Link>
 

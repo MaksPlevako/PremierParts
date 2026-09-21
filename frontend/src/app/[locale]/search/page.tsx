@@ -69,7 +69,7 @@ export default async function SearchPage({ params, searchParams }: PageProps<"/[
           data={data}
           path="/search"
           searchParams={picked}
-          categoryHref={(slug) => `/search?q=${encodeURIComponent(q)}&category=${slug}`}
+          categoryHrefPrefix={`/search?q=${encodeURIComponent(q)}&category=`}
         />
       )}
     </div>
