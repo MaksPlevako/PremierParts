@@ -23,6 +23,10 @@ def suppress_revalidation():
         _state.suppressed = previous
 
 
+def is_suppressed() -> bool:
+    return getattr(_state, "suppressed", False)
+
+
 def _send(tags: list[str]) -> None:
     url = settings.NEXT_REVALIDATE_URL
     if not url:
