@@ -1,0 +1,49 @@
+/* Premier Parts admin polish on top of Unfold */
+.pp-dash { display: flex; flex-direction: column; gap: 20px; }
+.pp-muted { color: #7a818a; font-size: 13px; }
+.pp-eyebrow { font-size: 11px; letter-spacing: .24em; font-weight: 700; color: #a67c2e; margin: 0 0 6px; }
+.pp-hero {
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap;
+  padding: 26px 28px; border-radius: 16px; color: #fff;
+  background: radial-gradient(600px 240px at 90% 0%, rgba(233,200,116,.28), transparent 70%),
+              linear-gradient(135deg, #15181c 0%, #2a2e35 60%, #5e4a1f 140%);
+}
+.pp-hero h1 { font-size: 24px; font-weight: 700; margin: 0 0 4px; color: #fff; }
+.pp-hero .pp-muted { color: #b8b2a2; }
+.pp-quick { display: flex; flex-wrap: wrap; gap: 8px; }
+.pp-quick__item {
+  display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #f4efe2; font-weight: 600; font-size: 13px;
+}
+.pp-quick__item:hover { background: linear-gradient(120deg, #c9a04a, #f1d78e 50%, #c9a04a); color: #1e1606; }
+.pp-quick__item .material-symbols-outlined { font-size: 18px; }
+.pp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.pp-kpi {
+  position: relative; display: flex; flex-direction: column; gap: 4px; padding: 18px 20px; border-radius: 14px;
+  background: #fff; border: 1px solid #e6e8eb; transition: box-shadow .2s, border-color .2s;
+}
+.pp-kpi:hover { border-color: #d9b45e; box-shadow: 0 10px 30px -18px rgba(120,95,40,.6); }
+.pp-kpi__icon { position: absolute; right: 16px; top: 16px; color: #c9a04a; }
+.pp-kpi__title { font-size: 13px; color: #5f666e; font-weight: 600; }
+.pp-kpi__value { font-size: 30px; font-weight: 700; color: #15181c; line-height: 1.1; }
+.pp-kpi__footer { font-size: 12px; color: #8a9099; }
+.pp-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; }
+@media (max-width: 1100px) { .pp-grid { grid-template-columns: 1fr; } }
+.pp-panel { background: #fff; border: 1px solid #e6e8eb; border-radius: 14px; overflow: hidden; }
+.pp-panel header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #eceef1; }
+.pp-panel h2 { font-size: 15px; font-weight: 700; margin: 0; }
+.pp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pp-table th { text-align: left; font-weight: 600; color: #5f666e; padding: 10px 18px; background: #f7f8f9; }
+.pp-table td { padding: 10px 18px; border-top: 1px solid #eceef1; vertical-align: middle; }
+.pp-link { color: #9c7424; font-weight: 700; }
+.pp-empty { padding: 22px 18px; color: #8a9099; }
+.pp-status { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: #f1f3f5; }
+.pp-status--new { background: #fff4d6; color: #8a6414; }
+.pp-status--confirmed { background: #e6f0ff; color: #2856a6; }
+.pp-status--shipped { background: #efe9ff; color: #5b3fb8; }
+.pp-status--completed { background: #e6f3ea; color: #2f7a45; }
+.pp-status--canceled { background: #fde8e8; color: #b42318; }
+.dark .pp-kpi, .dark .pp-panel { background: #1b1e23; border-color: #2a2e35; }
+.dark .pp-kpi__value { color: #f4efe2; }
+.dark .pp-table th { background: #22262c; }
+.dark .pp-table td { border-color: #2a2e35; }

@@ -1,0 +1,66 @@
+{% extends "admin/base_site.html" %}
+{% load i18n unfold %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block title %}Дашборд | Premier Parts{% endblock %}
+
+{% block content %}
+  <div class="pp-dash">
+    <div class="pp-hero">
+      <div>
+        <p class="pp-eyebrow">PREMIER PARTS · АДМІН-ПАНЕЛЬ</p>
+        <h1>Доброго дня{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}!</h1>
+        <p class="pp-muted">Замовлення, запити за VIN, каталог і маркетинг — усе в одному місці.</p>
+      </div>
+      <div class="pp-quick">
+        {% for link in quick_links %}
+          <a href="{{ link.href }}" class="pp-quick__item" {% if link.href == "/" %}target="_blank"{% endif %}>
+            <span class="material-symbols-outlined">{{ link.icon }}</span>{{ link.title }}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="pp-kpis">
+      {% for kpi in kpis %}
+        <a href="{{ kpi.href }}" class="pp-kpi">
+          <span class="material-symbols-outlined pp-kpi__icon">{{ kpi.icon }}</span>
+          <span class="pp-kpi__title">{{ kpi.title }}</span>
+          <span class="pp-kpi__value">{{ kpi.value }}</span>
+          <span class="pp-kpi__footer">{{ kpi.footer }}</span>
+        </a>
+      {% endfor %}
+    </div>
+
+    <div class="pp-grid">
+      <section class="pp-panel">
+        <header><h2>Останні замовлення</h2><a class="pp-link" href="{% url 'admin:orders_order_changelist' %}">Усі →</a></header>
+        {% if recent_orders.rows %}
+          <table class="pp-table">
+            <thead><tr>{% for h in recent_orders.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for row in recent_orders.rows %}<tr>{% for cell in row %}<td>{{ cell|safe }}</td>{% endfor %}</tr>{% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="pp-empty">Замовлень ще немає — оформіть тестове на сайті.</p>
+        {% endif %}
+      </section>
+
+      <section class="pp-panel">
+        <header><h2>Нові запити за VIN</h2><a class="pp-link" href="{% url 'admin:vin_vinrequest_changelist' %}">Усі →</a></header>
+        {% if recent_vin.rows %}
+          <table class="pp-table">
+            <thead><tr>{% for h in recent_vin.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for row in recent_vin.rows %}<tr>{% for cell in row %}<td>{{ cell|safe }}</td>{% endfor %}</tr>{% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="pp-empty">Нових запитів немає.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+{% endblock %}

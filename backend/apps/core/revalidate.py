@@ -37,6 +37,14 @@ def _send(tags: list[str]) -> None:
         log.warning("revalidate %s failed: %s", tags, exc)
 
 
+def _dispatch(tags: list[str]) -> None:
+    if getattr(settings, "REVALIDATE_ASYNC", True):
+        # never make an admin save wait for Next.js (DNS/timeouts when the frontend is down)
+        threading.Thread(target=_send, args=(tags,), daemon=True).start()
+    else:
+        _send(tags)
+
+
 def revalidate_tags(tags: list[str], *, immediate: bool = False) -> None:
     if getattr(_state, "suppressed", False):
         return
@@ -44,4 +52,4 @@ def revalidate_tags(tags: list[str], *, immediate: bool = False) -> None:
     if immediate:
         _send(unique)
     else:
-        transaction.on_commit(lambda: _send(unique))
+        transaction.on_commit(lambda: _dispatch(unique))
