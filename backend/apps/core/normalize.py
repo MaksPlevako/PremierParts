@@ -59,3 +59,18 @@ def split_part_numbers(text: str) -> list[str]:
         if _looks_like_part_number(token):
             seen.setdefault(normalize_part_number(token), None)
     return list(seen)
+
+
+_PHONE_DIGITS = re.compile(r"\D")
+
+
+def normalize_phone(raw: str) -> str | None:
+    """Ukrainian mobile/landline to E.164: '063 420 39 93' / '0634203993' / '+38 (063)…' -> '+380634203993'."""
+    digits = _PHONE_DIGITS.sub("", raw or "")
+    if len(digits) == 10 and digits.startswith("0"):
+        digits = "38" + digits
+    elif len(digits) == 9:
+        digits = "380" + digits
+    if len(digits) == 12 and digits.startswith("380"):
+        return "+" + digits
+    return None

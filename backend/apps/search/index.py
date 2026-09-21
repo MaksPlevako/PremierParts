@@ -39,7 +39,7 @@ INDEX_SETTINGS = {
         "promo",
         "promotion_ids",
     ],
-    "sortableAttributes": ["price", "popularity", "created_at"],
+    "sortableAttributes": ["price", "has_price", "popularity", "created_at"],
     "rankingRules": ["words", "typo", "proximity", "attribute", "sort", "exactness", "popularity:desc"],
     "typoTolerance": {
         "enabled": True,
@@ -133,6 +133,12 @@ def build_synonyms() -> dict[str, list[str]]:
 
 def sync_synonyms() -> None:
     _wait(index().update_synonyms(build_synonyms()))
+
+
+def multi_search(queries: list[dict]) -> list[dict]:
+    for query in queries:
+        query["indexUid"] = settings.MEILI_INDEX
+    return client().multi_search(queries)["results"]
 
 
 def search(q: str, *, filters=None, facets=None, sort=None, page: int = 1, hits_per_page: int = 24, **extra) -> dict:
