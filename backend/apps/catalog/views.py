@@ -192,6 +192,7 @@ def car_detail(request, make_slug, model_slug, gen_slug):
     )
     rows = (
         Product.objects.filter(is_active=True, fitments__generation=gen)
+        .order_by()
         .values("category_id", "category__slug", "category__name")
         .annotate(count=Count("id", distinct=True))
         .order_by("-count", "category__name")

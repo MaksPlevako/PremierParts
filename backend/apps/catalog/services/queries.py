@@ -69,7 +69,8 @@ def cards_by_ids(ids: list[int], promos: list[ActivePromotion] | None = None) ->
 
 
 def category_counts() -> dict[int, int]:
-    rows = Product.objects.filter(is_active=True).values("category_id").annotate(n=Count("id"))
+    # .order_by() matters: modeltranslation turns Meta.ordering into an explicit ORDER BY that would leak into GROUP BY
+    rows = Product.objects.filter(is_active=True).order_by().values("category_id").annotate(n=Count("id"))
     direct = {row["category_id"]: row["n"] for row in rows}
     totals: dict[int, int] = defaultdict(int)
     for cat in Category.objects.only("id", "parent_id"):
@@ -142,6 +143,7 @@ def makes_with_counts() -> list[dict]:
 def generation_product_counts(generation_ids) -> dict[int, int]:
     rows = (
         Product.objects.filter(is_active=True, fitments__generation_id__in=generation_ids)
+        .order_by()
         .values("fitments__generation_id")
         .annotate(n=Count("id", distinct=True))
     )

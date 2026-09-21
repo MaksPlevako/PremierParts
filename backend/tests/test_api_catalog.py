@@ -132,3 +132,12 @@ def test_promotion_detail_lists_products(api):
     body = api.get("/api/promotions/optika-10").json()
     assert body["discount_percent"] == 10
     assert [p["id"] for p in body["products"]] == [product.id]
+
+
+def test_category_counts_group_correctly(api):
+    """Regression: translated Meta.ordering must not leak into GROUP BY."""
+    make_product(name="Фара А")
+    make_product(name="Фара Б")
+    tree = api.get("/api/categories").json()
+    assert tree[0]["product_count"] == 2
+    assert tree[0]["children"][0]["product_count"] == 2

@@ -464,6 +464,7 @@ def suggest(q: str, car_generation_id: int | None = None) -> dict:
             gen_ids = [m["generation_id"] for m in matches[:1]]
             rows = (
                 Product.objects.filter(is_active=True, fitments__generation_id__in=gen_ids)
+                .order_by()
                 .values("category_id", "category__slug", "category__name")
                 .annotate(count=Count("id", distinct=True))
                 .order_by("-count")

@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+/* ───────────────────────── Premier Parts · «Платина» design tokens ───────────────────────── */
+@theme {
+  --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-unbounded), var(--font-onest), ui-sans-serif, sans-serif;
+
+  --color-ink: #15181c;
+  --color-ink-soft: #2b3036;
+  --color-graphite-700: #2a2e35;
+  --color-graphite-900: #111316;
+
+  --color-platinum-25: #fbfbfc;
+  --color-platinum-50: #f7f8f9;
+  --color-platinum-100: #eef0f2;
+  --color-platinum-200: #e1e4e8;
+  --color-platinum-300: #c9ced4;
+  --color-platinum-400: #9aa0a8;
+  --color-platinum-500: #7a818a;
+  --color-platinum-600: #5f666e;
+  --color-platinum-700: #3b4148;
+
+  --color-gold-50: #fbf6e9;
+  --color-gold-100: #f7efdc;
+  --color-gold-200: #f1d78e;
+  --color-gold-300: #e7c573;
+  --color-gold-400: #d9b45e;
+  --color-gold-500: #c9a04a;
+  --color-gold-600: #b98e3a;
+  --color-gold-700: #9c7424;
+  --color-gold-800: #8a6414;
+  --color-gold-900: #5e4a1f;
+
+  --color-success: #2f7a45;
+  --color-success-soft: #e6f3ea;
+  --color-warning: #9a6a12;
+  --color-danger: #b42318;
+
+  --radius-card: 18px;
+  --radius-panel: 22px;
+
+  --shadow-soft: 0 1px 2px rgba(21, 24, 28, 0.04), 0 8px 24px -12px rgba(21, 24, 28, 0.12);
+  --shadow-float: 0 1px 0 #fff inset, 0 24px 60px -24px rgba(20, 30, 45, 0.35), 0 0 0 1px #e1e4e8;
+  --shadow-gold: 0 18px 40px -18px rgba(156, 116, 36, 0.55);
+
+  --ease-lux: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+}
+
+@utility bg-gold {
+  background-image: linear-gradient(120deg, #c9a04a 0%, #f1d78e 50%, #c9a04a 100%);
+  background-size: 200% 100%;
+}
+@utility text-gold {
+  background-image: linear-gradient(100deg, #9c7424 0%, #e7c573 45%, #f7e6b0 55%, #b98e3a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@utility bg-lux {
+  background: radial-gradient(600px 260px at 88% 0%, rgba(233, 200, 116, 0.22), transparent 70%),
+    linear-gradient(150deg, #15181c 0%, #2a2e35 62%, #5e4a1f 135%);
+}
+@utility bg-platinum {
+  background: linear-gradient(180deg, #eef0f2 0%, #f7f8f9 38%, #ffffff 100%);
+}
+@utility glass {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: saturate(1.4) blur(14px);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+}
+@utility ring-hairline {
+  box-shadow: 0 0 0 1px var(--color-platinum-200);
+}
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-white font-sans text-ink antialiased;
+  }
+  ::selection {
+    background: #f1d78e;
+    color: #15181c;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold-500);
+    outline-offset: 2px;
+    border-radius: 8px;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Rich text from the admin (static pages) */
+.prose-lux {
+  @apply text-[15px] leading-7 text-platinum-700;
+}
+.prose-lux p { @apply my-3; }
+.prose-lux strong, .prose-lux b { @apply font-semibold text-ink; }
+.prose-lux h2, .prose-lux h3 { @apply mt-8 mb-3 font-display font-medium text-ink; }
+.prose-lux ul { @apply my-3 list-disc pl-5; }
+.prose-lux a { @apply font-semibold text-gold-700 underline decoration-gold-300 underline-offset-4; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

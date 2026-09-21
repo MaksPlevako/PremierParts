@@ -37,6 +37,8 @@ services:
       NEXT_REVALIDATE_URL: http://frontend:3000/api/revalidate
       MEDIA_ROOT: /data/media
       IMPORT_CACHE_DIR: /data/cache
+    ports:
+      - "8000:8000"
     volumes:
       - ./backend:/app
       - media:/data/media
