@@ -1,0 +1,12 @@
+.superpowers/
+node_modules/
+.next/
+__pycache__/
+*.pyc
+.venv/
+.env
+backend/media/
+backend/staticfiles/
+.pytest_cache/
+*.log
+.DS_Store
