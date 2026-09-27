@@ -55,10 +55,12 @@ services:
 
   forma-worker:
     profiles: ["forma"]
+    restart: unless-stopped
     build: ./backend
     env_file: .env
     environment:
       DATABASE_URL: postgres://premier:${POSTGRES_PASSWORD:-premier}@postgres:5432/premier
+      MEILI_URL: http://meilisearch:7700
       NEXT_REVALIDATE_URL: http://frontend:3000/api/revalidate
       MEDIA_ROOT: /data/media
       IMPORT_CACHE_DIR: /data/cache
@@ -72,6 +74,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      meilisearch:
+        condition: service_started
 
   frontend:
     build:
