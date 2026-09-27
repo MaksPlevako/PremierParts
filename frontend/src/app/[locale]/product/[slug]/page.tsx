@@ -13,7 +13,7 @@ import { Link } from "@/i18n/navigation";
 import { getBanners, getProduct, getSettingsSafe } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
 import { formatPrice } from "@/lib/format";
-import { JsonLd, productJsonLd } from "@/lib/seo";
+import { JsonLd, productJsonLd, seoMetadata, seoSummary } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/product/[slug]">): Promise<Metadata> {
   const { slug } = await params;
@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/product/
   const price = p.sale_price ?? p.price;
   const description = [
     p.name,
+    p.description ? seoSummary(p.description, 80) : null,
     p.manufacturer && `Виробник ${p.manufacturer}`,
     p.sku && `арт. ${p.sku}`,
     price ? `Ціна ${formatPrice(price)}` : null,
@@ -29,12 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/[locale]/product/
   ]
     .filter(Boolean)
     .join(". ");
-  return {
-    title: `${p.name} — купити`,
-    description,
-    alternates: { canonical: `/product/${p.slug}` },
-    openGraph: { type: "website", title: p.name, description, images: p.images.slice(0, 1).map((i) => ({ url: i.url, alt: p.name })) },
-  };
+  return seoMetadata(`${p.name} — купити`, seoSummary(description), `/product/${p.slug}`, p.images[0]?.url);
 }
 
 export default async function ProductPage({ params }: PageProps<"/[locale]/product/[slug]">) {

@@ -44,6 +44,7 @@ export function MobileNav({ open, onClose, categories, nav, phone }: Props) {
           </ul>
         </section>
         <section className="flex flex-col">
+          <Link href="/account" onClick={onClose} className="rounded-xl px-2 py-2.5 text-[15px] font-semibold text-gold-700 hover:bg-platinum-50">Особистий кабінет</Link>
           {nav.map((item) => (
             <Link
               key={item.href}

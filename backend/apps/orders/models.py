@@ -38,6 +38,7 @@ class Order(models.Model):
     city = models.CharField(_("місто"), max_length=160, blank=True)
     np_branch = models.CharField(_("відділення НП"), max_length=255, blank=True)
     address = models.CharField(_("адреса"), max_length=255, blank=True)
+    tracking_number = models.CharField(_("номер ТТН"), max_length=80, blank=True)
     payment_method = models.CharField(_("оплата"), max_length=12, choices=Payment.choices, default=Payment.IBAN)
     comment = models.TextField(_("коментар клієнта"), blank=True)
     car_snapshot = models.JSONField(_("авто клієнта"), default=dict, blank=True)

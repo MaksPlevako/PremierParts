@@ -46,6 +46,21 @@ def test_inactive_product_is_404(api):
     assert api.get("/api/products/hidden").status_code == 404
 
 
+def test_sitemap_index_includes_all_active_products_and_only_public_cars(api):
+    public_gen = make_generation()
+    hidden_gen = make_generation(model="Golf 7", year_from=2012, year_to=2019)
+    make_product(slug="first", generations=[public_gen])
+    make_product(slug="second", generations=[public_gen])
+    make_product(slug="universal")
+    make_product(slug="hidden", generations=[hidden_gen], is_active=False)
+
+    body = api.get("/api/seo/sitemap-index").json()
+
+    assert [p["slug"] for p in body["products"]] == ["first", "second", "universal"]
+    assert all(p["updated_at"] for p in body["products"])
+    assert body["cars"] == [["volkswagen", "passat-b7-usa", "2011-2014"]]
+
+
 def test_make_detail_groups_models_by_family(api):
     gen_usa = make_generation(model="Passat B7 USA")
     make_generation(model="Passat B7", year_from=2010, year_to=2015)

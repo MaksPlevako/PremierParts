@@ -18,7 +18,8 @@ def orders_create(request):
     ser.is_valid(raise_exception=True)
     data = dict(ser.validated_data)
     items = [dict(i) for i in data.pop("items")]
-    order = create_order(OrderInput(items=items, **data))
+    user = request.user if request.user and request.user.is_authenticated else None
+    order = create_order(OrderInput(items=items, user=user, **data))
     return Response(
         {"number": order.number, "access_token": str(order.access_token), "total": float(order.total)},
         status=status.HTTP_201_CREATED,
@@ -29,7 +30,8 @@ def orders_create(request):
 def orders_quick(request):
     ser = QuickOrderSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
-    order = create_quick_order(**ser.validated_data)
+    user = request.user if request.user and request.user.is_authenticated else None
+    order = create_quick_order(**ser.validated_data, user=user)
     return Response(
         {"number": order.number, "access_token": str(order.access_token), "total": float(order.total)},
         status=status.HTTP_201_CREATED,

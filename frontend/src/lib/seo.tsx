@@ -1,11 +1,46 @@
+import type { Metadata } from "next";
+
 import type { ProductDetail, SiteSettings } from "./types";
 
 export function siteUrl(): string {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:8080").replace(/\/$/, "");
+  return (process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:8080").replace(/\/$/, "");
 }
 
 export function absoluteUrl(path: string): string {
   return path.startsWith("http") ? path : `${siteUrl()}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+export function seoMetadata(title: string, description: string, path: string, image?: string): Metadata {
+  const imageUrl = image || "/brand/logo_black_row.png";
+  return {
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      type: "website",
+      url: path,
+      title,
+      description,
+      images: [{ url: imageUrl, alt: title }],
+    },
+    twitter: { card: "summary_large_image", title, description, images: [imageUrl] },
+  };
+}
+
+export function listingSeo(path: string, searchParams: Record<string, string | string[] | undefined>): Metadata {
+  const pageValue = searchParams.page;
+  const page = pageValue === undefined ? 1 : typeof pageValue === "string" ? Number(pageValue) : NaN;
+  const hasFilters = Object.keys(searchParams).some((key) => key !== "page");
+  const validPage = Number.isSafeInteger(page) && page >= 1;
+  return {
+    alternates: { canonical: !hasFilters && validPage && page > 1 ? `${path}?page=${page}` : path },
+    robots: hasFilters || !validPage ? { index: false, follow: true } : undefined,
+  };
+}
+
+export function seoSummary(value: string, maxLength = 155): string {
+  const clean = value.replace(/<[^>]*>/g, " ").replace(/&(?:nbsp|[a-z]+|#\d+);/gi, " ").replace(/\s+/g, " ").trim();
+  return clean.length > maxLength ? `${clean.slice(0, maxLength).trimEnd()}…` : clean;
 }
 
 export function storeJsonLd(settings: SiteSettings | null) {
@@ -14,7 +49,7 @@ export function storeJsonLd(settings: SiteSettings | null) {
     "@type": "AutoPartsStore",
     name: "Premier Parts",
     url: siteUrl(),
-    logo: absoluteUrl("/icon.svg"),
+    logo: absoluteUrl("/brand/logo_black_main.png"),
     email: settings?.email,
     telephone: settings?.phones?.[0]?.number,
     address: {
@@ -49,14 +84,18 @@ export function productJsonLd(p: ProductDetail) {
     image: p.images.map((i) => absoluteUrl(i.url)),
     description: p.description || p.name,
     itemCondition: "https://schema.org/NewCondition",
-    offers: {
+    offers: price > 0 ? {
       "@type": "Offer",
       url: absoluteUrl(`/product/${p.slug}`),
       priceCurrency: "UAH",
-      price: price || undefined,
+      price,
       availability:
-        p.stock_status === "in_stock" ? "https://schema.org/InStock" : "https://schema.org/PreOrder",
-    },
+        p.stock_status === "in_stock"
+          ? "https://schema.org/InStock"
+          : p.stock_status === "on_order"
+            ? "https://schema.org/PreOrder"
+            : "https://schema.org/OutOfStock",
+    } : undefined,
   };
 }
 

@@ -15,7 +15,7 @@ export async function Footer({ settings, categories }: { settings: SiteSettings 
     <footer className="mt-24 bg-lux text-platinum-300">
       <div className="mx-auto grid max-w-[1320px] gap-10 px-6 py-14 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
         <div className="flex flex-col gap-4">
-          <Logo tone="light" />
+          <Logo tone="white" />
           {settings?.about_short && <p className="max-w-sm text-[13.5px] leading-6 text-platinum-400">{settings.about_short}</p>}
         </div>
         <div>

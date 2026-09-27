@@ -1,7 +1,11 @@
 import pytest
+from django.contrib.admin.sites import AdminSite
+from django.test import override_settings
 from rest_framework.test import APIClient
 
+from apps.orders.admin import OrderAdmin
 from apps.orders.models import Order
+from apps.orders.notify import notify_manager
 
 from .factories import make_generation, make_product, make_promotion
 
@@ -93,6 +97,44 @@ def test_notification_failure_does_not_break_order(monkeypatch, django_capture_o
     with django_capture_on_commit_callbacks(execute=True):
         response = APIClient().post("/api/orders", payload(product), format="json")
     assert response.status_code == 201
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", MANAGER_EMAILS=["support@premier-parts.com.ua"])
+def test_order_sends_branded_manager_and_customer_emails(django_capture_on_commit_callbacks, mailoutbox):
+    product = make_product(price="1200")
+    with django_capture_on_commit_callbacks(execute=True):
+        response = APIClient().post("/api/orders", payload(product, email="buyer@example.com"), format="json")
+    assert response.status_code == 201
+    assert len(mailoutbox) == 2
+    manager, customer = mailoutbox
+    assert manager.to == ["support@premier-parts.com.ua"]
+    assert customer.to == ["buyer@example.com"]
+    assert product.name in manager.body and product.name in customer.body
+    assert "<html" in manager.alternatives[0][0]
+    assert "<html" in customer.alternatives[0][0]
+    assert response.json()["access_token"] not in manager.body
+    assert response.json()["access_token"] in customer.body
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", MANAGER_EMAILS=["support@premier-parts.com.ua"])
+def test_admin_status_change_notifies_customer(django_capture_on_commit_callbacks, mailoutbox):
+    order = Order.objects.create(phone="+380634203993", email="buyer@example.com")
+    order.status = Order.Status.SHIPPED
+    order.tracking_number = "20450000000000"
+    with django_capture_on_commit_callbacks(execute=True):
+        OrderAdmin(Order, AdminSite()).save_model(None, order, None, True)
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].to == ["buyer@example.com"]
+    assert "20450000000000" in mailoutbox[0].body
+    assert "Відправлене" in mailoutbox[0].alternatives[0][0]
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend", MANAGER_EMAILS=["support@premier-parts.com.ua"])
+def test_generic_manager_alert_escapes_content(mailoutbox):
+    notify_manager("Новий VIN-запит", ["Коментар: <script>alert(1)</script>"])
+    assert mailoutbox[0].to == ["support@premier-parts.com.ua"]
+    assert "&lt;script&gt;" in mailoutbox[0].alternatives[0][0]
+    assert "<script>" not in mailoutbox[0].alternatives[0][0]
 
 
 def test_order_detail_requires_token():

@@ -69,11 +69,11 @@ export function ProductCard({ product, priority = false }: { product: Card; prio
   );
 }
 
-export function ProductGrid({ products, className }: { products: Card[]; className?: string }) {
+export function ProductGrid({ products, className, priorityCount = 0 }: { products: Card[]; className?: string; priorityCount?: number }) {
   return (
     <div className={cn("grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4", className)}>
       {products.map((p, i) => (
-        <ProductCard key={p.id} product={p} priority={i < 4} />
+        <ProductCard key={p.id} product={p} priority={i < priorityCount} />
       ))}
     </div>
   );

@@ -41,12 +41,14 @@ INSTALLED_APPS = [
     "apps.search",
     "apps.vin",
     "apps.orders",
+    "apps.accounts",
     "apps.importer",
     "apps.dashboard",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.accounts.middleware.AccountNoStoreMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
@@ -114,11 +116,17 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 5000
 
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
+    "DEFAULT_AUTHENTICATION_CLASSES": ["rest_framework.authentication.SessionAuthentication"],
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "UNAUTHENTICATED_USER": None,
 }
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", not DEBUG)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # --- Integrations ---
 MEILI_URL = os.environ.get("MEILI_URL", "http://localhost:7700")
@@ -130,9 +138,23 @@ NOVA_POSHTA_API_KEY = os.environ.get("NOVA_POSHTA_API_KEY", "")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 NHTSA_URL = os.environ.get("NHTSA_URL", "https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/{vin}?format=json")
-MANAGER_EMAILS = [e for e in os.environ.get("MANAGER_EMAILS", "info@premier-parts.com.ua").split(",") if e]
+MANAGER_EMAILS = [e.strip() for e in os.environ.get("MANAGER_EMAILS", "support@premier-parts.com.ua").split(",") if e.strip()]
 EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
-DEFAULT_FROM_EMAIL = "Premier Parts <no-reply@premier-parts.com.ua>"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Premier Parts <no-reply@premier-parts.com.ua>")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+EMAIL_TIMEOUT = int(os.environ.get("EMAIL_TIMEOUT", "10"))
+SITE_URL = os.environ.get("SITE_URL", "http://localhost:8080").rstrip("/")
+GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
+GOOGLE_OAUTH_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET", "")
+APPLE_SERVICE_ID = os.environ.get("APPLE_SERVICE_ID", "")
+APPLE_TEAM_ID = os.environ.get("APPLE_TEAM_ID", "")
+APPLE_KEY_ID = os.environ.get("APPLE_KEY_ID", "")
+APPLE_PRIVATE_KEY = os.environ.get("APPLE_PRIVATE_KEY", "").replace("\\n", "\n")
 
 LOGGING = {
     "version": 1,
@@ -149,10 +171,10 @@ UNFOLD = {
     "SITE_SUBHEADER": "Адмін-панель магазину",
     "SITE_URL": "/",
     "SITE_SYMBOL": "directions_car",
-    "SITE_LOGO": lambda request: static("admin/pp-logo.svg"),
-    "SITE_ICON": lambda request: static("admin/pp-mark.svg"),
+    "SITE_LOGO": lambda request: static("admin/pp-logo.png"),
+    "SITE_ICON": lambda request: static("admin/pp-mark.png"),
     "SITE_FAVICONS": [
-        {"rel": "icon", "sizes": "32x32", "type": "image/svg+xml", "href": lambda request: static("admin/pp-mark.svg")},
+        {"rel": "icon", "sizes": "32x32", "type": "image/png", "href": lambda request: static("admin/pp-mark.png")},
     ],
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": True,
@@ -240,9 +262,10 @@ UNFOLD = {
                 "title": _("Доступ"),
                 "items": [
                     {"title": _("Користувачі"), "icon": "person", "link": reverse_lazy("admin:auth_user_changelist")},
+                    {"title": _("Профілі клієнтів"), "icon": "account_circle", "link": reverse_lazy("admin:accounts_customerprofile_changelist")},
+                    {"title": _("Автопарк клієнтів"), "icon": "garage", "link": reverse_lazy("admin:accounts_savedcar_changelist")},
                 ],
             },
         ],
     },
 }
-

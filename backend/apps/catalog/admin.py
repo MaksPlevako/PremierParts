@@ -1,5 +1,16 @@
+import re
+from pathlib import Path
+from uuid import uuid4
+
+from django.conf import settings
 from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count
+from django.db import transaction
+from django.http import HttpResponseRedirect
+from django.template.response import TemplateResponse
+from django.urls import path, reverse
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from import_export import fields, resources
 from import_export.admin import ImportExportModelAdmin
@@ -25,6 +36,7 @@ from .models import (
     ProductImage,
     StockStatus,
 )
+from .supplier_prices import SupplierPriceError, apply_supplier_price_plan, build_supplier_price_plan
 
 
 class ProductImageInline(TabularInline):
@@ -66,6 +78,7 @@ class ProductResource(resources.ModelResource):
 
 @admin.register(Product)
 class ProductAdmin(ModelAdmin, TranslationAdmin, ImportExportModelAdmin):
+    change_list_template = "admin/catalog/product/change_list.html"
     resource_classes = [ProductResource]
     import_form_class = ImportForm
     export_form_class = ExportForm
@@ -95,6 +108,110 @@ class ProductAdmin(ModelAdmin, TranslationAdmin, ImportExportModelAdmin):
         (_("Характеристики"), {"fields": (("side", "position"), "condition", "description")}),
         (_("Службове"), {"classes": ["collapse"], "fields": ("legacy_url", "created_at", "updated_at")}),
     )
+
+    def get_urls(self):
+        return [
+            path(
+                "supplier-price-import/",
+                self.admin_site.admin_view(self.supplier_price_import_view),
+                name="catalog_product_supplier_price_import",
+            ),
+        ] + super().get_urls()
+
+    def supplier_price_import_view(self, request):
+        if not self.has_change_permission(request):
+            raise PermissionDenied
+
+        cache_dir = Path(settings.IMPORT_CACHE_DIR) / "supplier-prices"
+        pending = request.session.get("supplier_price_import") or {}
+        preview = None
+        error = None
+        mode = "preserve_margin"
+
+        if request.method == "POST" and request.POST.get("action") == "preview":
+            upload = request.FILES.get("file")
+            mode = request.POST.get("mode", "preserve_margin")
+            if not upload:
+                error = "Виберіть CSV-файл постачальника."
+            elif upload.size > 15 * 1024 * 1024:
+                error = "Файл завеликий (максимум 15 МБ)."
+            else:
+                data = upload.read()
+                try:
+                    preview = build_supplier_price_plan(data, mode)
+                    if not preview.rows or not preview.matched_products:
+                        raise SupplierPriceError("У файлі немає товарів, які вдалося зіставити з каталогом")
+                except SupplierPriceError as exc:
+                    error = str(exc)
+                    preview = None
+                else:
+                    self._clear_supplier_import(request, cache_dir, pending)
+                    cache_dir.mkdir(parents=True, exist_ok=True)
+                    self._cleanup_stale_supplier_imports(cache_dir)
+                    token = uuid4().hex
+                    (cache_dir / f"{token}.csv").write_bytes(data)
+                    request.session["supplier_price_import"] = {
+                        "token": token,
+                        "mode": mode,
+                        "fingerprint": preview.fingerprint,
+                        "created": timezone.now().timestamp(),
+                    }
+
+        elif request.method == "POST" and request.POST.get("action") == "apply":
+            token = pending.get("token", "")
+            if not re.fullmatch(r"[0-9a-f]{32}", token) or request.POST.get("token") != token:
+                error = "Попередній перегляд не знайдено. Завантажте файл знову."
+            elif timezone.now().timestamp() - pending.get("created", 0) > 7200:
+                self._clear_supplier_import(request, cache_dir, pending)
+                error = "Попередній перегляд застарів. Завантажте файл знову."
+            else:
+                try:
+                    data = (cache_dir / f"{token}.csv").read_bytes()
+                    with transaction.atomic():
+                        preview = build_supplier_price_plan(data, pending["mode"], lock=True)
+                        if preview.fingerprint != pending["fingerprint"]:
+                            raise SupplierPriceError("Ціни або товари змінилися після перегляду. Завантажте файл знову.")
+                        updated = apply_supplier_price_plan(preview)
+                except (OSError, KeyError, SupplierPriceError) as exc:
+                    error = str(exc)
+                    preview = None
+                else:
+                    self._clear_supplier_import(request, cache_dir, pending)
+                    self.message_user(
+                        request,
+                        f"Імпортовано: {updated} товарів; змінено роздрібну ціну: {preview.retail_changes}; "
+                        f"не знайдено рядків: {preview.unmatched_rows}; некоректних: {preview.invalid_rows}.",
+                        messages.SUCCESS,
+                    )
+                    return HttpResponseRedirect(reverse("admin:catalog_product_changelist"))
+
+        context = {
+            **self.admin_site.each_context(request),
+            "opts": self.model._meta,
+            "title": "Імпорт цін постачальника",
+            "preview": preview,
+            "error": error,
+            "mode": mode,
+            "pending_token": request.session.get("supplier_price_import", {}).get("token", "") if preview else "",
+        }
+        return TemplateResponse(request, "admin/catalog/product/supplier_price_import.html", context)
+
+    @staticmethod
+    def _clear_supplier_import(request, cache_dir, pending):
+        token = pending.get("token", "")
+        if re.fullmatch(r"[0-9a-f]{32}", token):
+            (cache_dir / f"{token}.csv").unlink(missing_ok=True)
+        request.session.pop("supplier_price_import", None)
+
+    @staticmethod
+    def _cleanup_stale_supplier_imports(cache_dir):
+        cutoff = timezone.now().timestamp() - 86400
+        for file in cache_dir.glob("*.csv"):
+            try:
+                if file.stat().st_mtime < cutoff:
+                    file.unlink()
+            except FileNotFoundError:
+                pass
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("category", "manufacturer").prefetch_related("images")

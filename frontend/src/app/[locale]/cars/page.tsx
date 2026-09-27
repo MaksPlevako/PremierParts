@@ -5,12 +5,13 @@ import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { Link } from "@/i18n/navigation";
 import { getMakes } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
+import { seoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Запчастини за марками авто",
-  description: "Кузовні запчастини для 50+ марок: Toyota, Volkswagen, Hyundai, Kia, Ford, Mercedes-Benz та інших.",
-  alternates: { canonical: "/cars" },
-};
+export const metadata: Metadata = seoMetadata(
+  "Запчастини за марками авто",
+  "Кузовні запчастини для 50+ марок: Toyota, Volkswagen, Hyundai, Kia, Ford, Mercedes-Benz та інших.",
+  "/cars",
+);
 
 export default async function CarsPage({ params }: PageProps<"/[locale]/cars">) {
   const { locale } = await params;

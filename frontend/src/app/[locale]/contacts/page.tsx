@@ -5,9 +5,13 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { getSettingsSafe } from "@/lib/api";
 import { formatPhoneHref } from "@/lib/format";
-import { JsonLd, storeJsonLd } from "@/lib/seo";
+import { JsonLd, seoMetadata, storeJsonLd } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Контакти", alternates: { canonical: "/contacts" } };
+export const metadata: Metadata = seoMetadata(
+  "Контакти",
+  "Контакти Premier Parts: телефон, електронна пошта, адреса та графік роботи. Допоможемо підібрати запчастини для вашого авто.",
+  "/contacts",
+);
 
 export default async function ContactsPage({ params }: PageProps<"/[locale]/contacts">) {
   const { locale } = await params;

@@ -3,12 +3,13 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { VinTool } from "@/components/vin/VinTool";
+import { seoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Підбір запчастин за VIN-кодом",
-  description: "Введіть VIN — визначимо марку, модель і рік випуску та покажемо лише сумісні кузовні деталі. Або надішліть запит менеджеру.",
-  alternates: { canonical: "/vin" },
-};
+export const metadata: Metadata = seoMetadata(
+  "Підбір запчастин за VIN-кодом",
+  "Введіть VIN — визначимо марку, модель і рік випуску та покажемо лише сумісні кузовні деталі. Або надішліть запит менеджеру.",
+  "/vin",
+);
 
 export default async function VinPage({ params, searchParams }: PageProps<"/[locale]/vin">) {
   const { locale } = await params;

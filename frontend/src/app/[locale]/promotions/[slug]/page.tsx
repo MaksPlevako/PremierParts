@@ -7,11 +7,17 @@ import { Listing } from "@/components/catalog/Listing";
 import { getPromotion, listProducts } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
 import { listingQuery, pickListingParams } from "@/lib/listing-params";
+import { listingSeo, seoMetadata } from "@/lib/seo";
 
-export async function generateMetadata({ params }: PageProps<"/[locale]/promotions/[slug]">): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps<"/[locale]/promotions/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const promo = await getPromotion(slug);
-  return promo ? { title: promo.title, description: promo.description, alternates: { canonical: `/promotions/${slug}` } } : {};
+  if (!promo) return {};
+  const path = `/promotions/${promo.slug}`;
+  return {
+    ...seoMetadata(promo.title, promo.description || `Акція ${promo.title} на автозапчастини Premier Parts.`, path, promo.image || undefined),
+    ...listingSeo(path, await searchParams),
+  };
 }
 
 export default async function PromotionPage({ params, searchParams }: PageProps<"/[locale]/promotions/[slug]">) {

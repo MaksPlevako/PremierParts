@@ -1,0 +1,10 @@
+{% extends "emails/base.html" %}
+{% block preheader %}Новий статус замовлення {{ order.number }}: {{ status_label }}{% endblock %}
+{% block eyebrow %}Оновлення замовлення{% endblock %}
+{% block title %}Замовлення {{ order.number }}{% endblock %}
+{% block content %}
+  <p style="margin:0 0 18px;color:#4e5862;font-size:15px;line-height:1.65;">Інформацію про ваше замовлення оновлено.</p>
+  <div style="padding:18px;background:#f7f2e7;border-left:4px solid #c9a04a;color:#15181c;font-size:17px;font-weight:bold;">{{ status_label }}</div>
+  {% if order.tracking_number %}<p style="margin:18px 0 0;color:#4e5862;font-size:14px;line-height:1.6;">ТТН: <strong>{{ order.tracking_number }}</strong></p>{% endif %}
+  {% if action_url %}<p style="margin:26px 0 0;"><a href="{{ action_url }}" style="display:inline-block;padding:13px 20px;background:#15181c;color:#ffffff;text-decoration:none;font-size:14px;font-weight:bold;">Переглянути замовлення</a></p>{% endif %}
+{% endblock %}

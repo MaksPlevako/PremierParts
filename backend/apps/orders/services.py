@@ -11,7 +11,7 @@ from apps.catalog.services.pricing import effective_price, live_promotions
 from apps.catalog.services.queries import car_ref
 
 from .models import Order, OrderItem
-from .notify import notify_manager
+from .notify import notify_manager, notify_order_customer, order_email_context
 
 
 @dataclass
@@ -29,6 +29,7 @@ class OrderInput:
     car_generation_id: int | None = None
     kind: str = Order.Kind.REGULAR
     extra_lines: list[str] = field(default_factory=list)
+    user: object | None = None
 
 
 def _money(value: Decimal) -> str:
@@ -71,6 +72,7 @@ def create_order(data: OrderInput) -> Order:
         payment_method=data.payment_method,
         comment=data.comment,
         car_snapshot=car,
+        user=data.user,
     )
     promos = live_promotions()
     subtotal = total = Decimal("0")
@@ -108,6 +110,12 @@ def _notify(order: Order, lines: list[str]) -> None:
         import logging
 
         logging.getLogger(__name__).exception("order notification failed")
+    try:
+        notify_order_customer(order)
+    except Exception:
+        import logging
+
+        logging.getLogger(__name__).exception("customer order email failed")
 
 
 def _send_notification(order: Order, lines: list[str]) -> None:
@@ -123,10 +131,12 @@ def _send_notification(order: Order, lines: list[str]) -> None:
             f"Разом: {_money(order.total)}",
             f"Коментар: {order.comment or '—'}",
         ],
+        template="order",
+        context=order_email_context(order, internal=True),
     )
 
 
-def create_quick_order(phone: str, product_id: int, name: str = "", qty: int = 1, note: str = "", car_generation_id=None) -> Order:
+def create_quick_order(phone: str, product_id: int, name: str = "", qty: int = 1, note: str = "", car_generation_id=None, user=None) -> Order:
     return create_order(
         OrderInput(
             phone=phone,
@@ -135,6 +145,7 @@ def create_quick_order(phone: str, product_id: int, name: str = "", qty: int = 1
             comment=note,
             kind=Order.Kind.QUICK,
             car_generation_id=car_generation_id,
+            user=user,
             delivery_method=Order.Delivery.NP_BRANCH,
         )
     )

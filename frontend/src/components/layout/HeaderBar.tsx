@@ -1,9 +1,9 @@
 "use client";
 
-import { ChevronDown, Menu, Phone, Search } from "lucide-react";
+import { ChevronDown, Menu, Phone, Search, UserRound } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Logo } from "@/components/brand/Logo";
 import { MyCarChip } from "@/components/car/MyCarChip";
@@ -24,6 +24,23 @@ export function HeaderBar({ categories, phone }: { categories: CategoryNode[]; p
   const [megaOpen, setMegaOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileSearch, setMobileSearch] = useState(false);
+  const megaCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelMegaClose = () => {
+    if (!megaCloseTimer.current) return;
+    clearTimeout(megaCloseTimer.current);
+    megaCloseTimer.current = null;
+  };
+
+  const openMegaMenu = () => {
+    cancelMegaClose();
+    setMegaOpen(true);
+  };
+
+  const scheduleMegaClose = () => {
+    cancelMegaClose();
+    megaCloseTimer.current = setTimeout(() => setMegaOpen(false), 180);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > (isHome ? 420 : 8));
@@ -31,6 +48,13 @@ export function HeaderBar({ categories, phone }: { categories: CategoryNode[]; p
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [isHome]);
+
+  useEffect(
+    () => () => {
+      if (megaCloseTimer.current) clearTimeout(megaCloseTimer.current);
+    },
+    [],
+  );
 
   // close menus after navigation (derived state reset during render, no effect needed)
   const [lastPath, setLastPath] = useState(pathname);
@@ -72,12 +96,21 @@ export function HeaderBar({ categories, phone }: { categories: CategoryNode[]; p
             <Logo />
           </Link>
 
-          <nav className="hidden items-center gap-1 lg:flex" onMouseLeave={() => setMegaOpen(false)}>
+          <nav
+            className="hidden h-full items-center gap-1 lg:flex"
+            onMouseEnter={cancelMegaClose}
+            onMouseLeave={scheduleMegaClose}
+          >
             <button
               type="button"
-              onMouseEnter={() => setMegaOpen(true)}
-              onClick={() => setMegaOpen((v) => !v)}
+              onMouseEnter={openMegaMenu}
+              onFocus={openMegaMenu}
+              onClick={() => {
+                cancelMegaClose();
+                setMegaOpen((v) => !v);
+              }}
               aria-expanded={megaOpen}
+              aria-haspopup="menu"
               className={cn(
                 "inline-flex h-10 items-center gap-1.5 rounded-xl px-3.5 text-[14px] font-semibold transition-colors",
                 megaOpen ? "bg-ink text-white" : "text-ink hover:bg-platinum-100",
@@ -127,6 +160,7 @@ export function HeaderBar({ categories, phone }: { categories: CategoryNode[]; p
               <Search className="size-5" />
             </button>
             <MyCarChip />
+            <Link href="/account" aria-label="Особистий кабінет" title="Особистий кабінет" className="grid size-10 place-items-center rounded-xl hover:bg-platinum-100"><UserRound className="size-5" /></Link>
             {phone && (
               <a
                 href={formatPhoneHref(phone.number)}

@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 .venv/
 .env
+.local-backups/
 backend/media/
 backend/staticfiles/
 .pytest_cache/

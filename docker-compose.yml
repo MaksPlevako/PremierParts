@@ -32,11 +32,15 @@ services:
     build: ./backend
     env_file: .env
     environment:
+      DJANGO_DEBUG: "true"
       DATABASE_URL: postgres://premier:${POSTGRES_PASSWORD:-premier}@postgres:5432/premier
       MEILI_URL: http://meilisearch:7700
       NEXT_REVALIDATE_URL: http://frontend:3000/api/revalidate
       MEDIA_ROOT: /data/media
       IMPORT_CACHE_DIR: /data/cache
+    command: >-
+      sh -c "python manage.py migrate --noinput &&
+      python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
     volumes:
@@ -52,12 +56,16 @@ services:
   frontend:
     build:
       context: ./frontend
-      args:
-        BACKEND_INTERNAL_URL: http://backend:8000
+      target: dev
     env_file: .env
     environment:
       BACKEND_INTERNAL_URL: http://backend:8000
       NEXT_PUBLIC_SITE_URL: ${SITE_URL:-http://localhost:8080}
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
     depends_on:
       - backend
 
@@ -77,3 +85,5 @@ volumes:
   meilidata:
   media:
   importcache:
+  frontend_node_modules:
+  frontend_next:

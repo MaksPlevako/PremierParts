@@ -5,7 +5,7 @@ import { connection } from "next/server";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { MyCarPicker } from "@/components/car/MyCarPicker";
+import { LazyMyCarPicker } from "@/components/car/LazyMyCarPicker";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { Toaster } from "@/components/ui/Toaster";
@@ -40,7 +40,6 @@ export async function generateMetadata({ params }: LayoutProps<"/[locale]">): Pr
     applicationName: t("siteName"),
     openGraph: { type: "website", siteName: t("siteName"), locale: "uk_UA", title, description },
     twitter: { card: "summary_large_image" },
-    alternates: { canonical: "/" },
     formatDetection: { telephone: true },
   };
 }
@@ -65,7 +64,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
           <Header settings={settings} categories={categories ?? []} />
           <main className="flex-1">{children}</main>
           <Footer settings={settings} categories={categories ?? []} />
-          <MyCarPicker />
+          <LazyMyCarPicker />
           <Toaster />
         </NextIntlClientProvider>
       </body>

@@ -1,0 +1,6 @@
+{% extends "emails/base.txt" %}{% block content %}{{ heading }}
+
+{{ introduction }}
+Ваш код: {{ code }}
+Код дійсний 10 хвилин. Нікому його не повідомляйте.
+Якщо ви не запитували цей код, проігноруйте лист.{% endblock %}

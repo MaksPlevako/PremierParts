@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -60,5 +61,10 @@ def vin_request(request):
             f"Авто: {car or ' '.join(filter(None, [decoded.get('make'), decoded.get('model'), str(decoded.get('year') or '')])) or '—'}",
             f"Коментар: {req.comment or '—'}",
         ],
+        context={
+            "summary": "Клієнт надіслав запит на підбір запчастини за VIN.",
+            "action_url": f"{settings.SITE_URL}/admin/vin/vinrequest/{req.pk}/change/",
+            "action_label": "Відкрити VIN-запит",
+        },
     )
     return Response({"id": req.id}, status=status.HTTP_201_CREATED)

@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path("home", views.home),
     path("categories", views.categories),
+    path("seo/sitemap-index", views.sitemap_index),
     path("categories/<slug:slug>", views.category_detail),
     path("products/<slug:slug>", views.product_detail),
     path("makes", views.makes),

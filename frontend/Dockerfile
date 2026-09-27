@@ -3,6 +3,14 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
+FROM deps AS dev
+WORKDIR /app
+ENV NODE_ENV=development \
+    NEXT_TELEMETRY_DISABLED=1
+COPY . .
+EXPOSE 3000
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--webpack"]
+
 FROM node:22-alpine AS build
 WORKDIR /app
 # rewrites (/media, /api) are compiled into the build, so the internal backend address is needed here

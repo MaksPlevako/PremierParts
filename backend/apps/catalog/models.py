@@ -201,6 +201,9 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.PROTECT, related_name="products", verbose_name=_("категорія"))
     description = models.TextField(_("опис"), blank=True)
     price = models.DecimalField(_("ціна, ₴"), max_digits=10, decimal_places=2, default=0, help_text=_("0 — «Ціну уточнюйте»"))
+    supplier_price = models.DecimalField(
+        _("остання ціна постачальника, ₴"), max_digits=10, decimal_places=2, null=True, blank=True, editable=False
+    )
     old_price = models.DecimalField(_("стара ціна, ₴"), max_digits=10, decimal_places=2, null=True, blank=True)
     stock_status = models.CharField(_("наявність"), max_length=16, choices=StockStatus.choices, default=StockStatus.IN_STOCK)
     side = models.CharField(_("сторона"), max_length=8, choices=Side.choices, default=Side.NONE)

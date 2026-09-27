@@ -1,0 +1,8 @@
+{% extends "emails/base.txt" %}{% block content %}{{ subject }}
+{% if summary %}
+{{ summary }}
+{% endif %}
+{% for line in lines %}{{ line }}
+{% endfor %}{% if action_url %}
+{{ action_label }}: {{ action_url }}
+{% endif %}{% endblock %}

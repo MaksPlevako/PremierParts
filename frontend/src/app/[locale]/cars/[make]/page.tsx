@@ -7,16 +7,17 @@ import { Link } from "@/i18n/navigation";
 import { getMake } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
 import { cn } from "@/lib/format";
+import { seoMetadata } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/cars/[make]">): Promise<Metadata> {
   const { make } = await params;
   const data = await getMake(make);
   if (!data) return {};
-  return {
-    title: `Запчастини ${data.name} — фари, бампери, радіатори`,
-    description: `Кузовні запчастини для ${data.name}: оптика, кузов, радіатори, скло та дзеркала. Підбір за моделлю, роками та VIN.`,
-    alternates: { canonical: `/cars/${data.slug}` },
-  };
+  return seoMetadata(
+    `Запчастини ${data.name} — фари, бампери, радіатори`,
+    `Кузовні запчастини для ${data.name}: оптика, кузов, радіатори, скло та дзеркала. Підбір за моделлю, роками та VIN.`,
+    `/cars/${data.slug}`,
+  );
 }
 
 export default async function MakePage({ params }: PageProps<"/[locale]/cars/[make]">) {

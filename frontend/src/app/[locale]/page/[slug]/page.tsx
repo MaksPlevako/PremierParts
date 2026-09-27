@@ -6,16 +6,17 @@ import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { getPage, getPages } from "@/lib/api";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/format";
+import { seoMetadata, seoSummary } from "@/lib/seo";
 
 export async function generateMetadata({ params }: PageProps<"/[locale]/page/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const page = await getPage(slug);
   if (!page) return {};
-  return {
-    title: page.seo_title || page.title,
-    description: page.seo_description || undefined,
-    alternates: { canonical: `/page/${slug}` },
-  };
+  return seoMetadata(
+    page.seo_title || page.title,
+    page.seo_description || seoSummary(page.body || page.title),
+    `/page/${page.slug}`,
+  );
 }
 
 export default async function StaticPage({ params }: PageProps<"/[locale]/page/[slug]">) {

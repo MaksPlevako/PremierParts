@@ -1,4 +1,5 @@
 import { BadgeCheck, MapPin, RotateCcw, Truck } from "lucide-react";
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { BannerCard } from "@/components/catalog/BannerCard";
@@ -11,6 +12,8 @@ import { getHome, getSettingsSafe } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
 import { formatCount } from "@/lib/format";
 import { JsonLd, storeJsonLd } from "@/lib/seo";
+
+export const metadata: Metadata = { alternates: { canonical: "/" }, openGraph: { url: "/" } };
 
 export default async function HomePage({ params }: PageProps<"/[locale]">) {
   const { locale } = await params;

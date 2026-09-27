@@ -49,7 +49,7 @@ export async function Listing({ data, path, searchParams, categoryHrefPrefix, sh
           </p>
         )}
         {data.results.length ? (
-          <ProductGrid products={data.results} className="xl:grid-cols-3 2xl:grid-cols-4" />
+          <ProductGrid products={data.results} className="xl:grid-cols-3 2xl:grid-cols-4" priorityCount={2} />
         ) : (
           <div className="flex flex-col items-center gap-3 rounded-[22px] bg-platinum-50 px-6 py-16 text-center ring-1 ring-platinum-200">
             <PackageSearch className="size-10 text-gold-600" />

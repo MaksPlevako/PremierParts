@@ -77,6 +77,7 @@ def order_summary(order: Order) -> dict:
         "city": order.city,
         "np_branch": order.np_branch,
         "address": order.address,
+        "tracking_number": order.tracking_number,
         "payment_method": order.payment_method,
         "payment_label": order.get_payment_method_display(),
         "comment": order.comment,

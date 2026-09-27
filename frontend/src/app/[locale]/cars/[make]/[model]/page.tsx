@@ -8,14 +8,16 @@ import { Link } from "@/i18n/navigation";
 import { getModel, listProducts } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
 import { listingQuery, pickListingParams } from "@/lib/listing-params";
+import { listingSeo, seoMetadata } from "@/lib/seo";
 
-export async function generateMetadata({ params }: PageProps<"/[locale]/cars/[make]/[model]">): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps<"/[locale]/cars/[make]/[model]">): Promise<Metadata> {
   const { make, model } = await params;
   const data = await getModel(make, model);
   if (!data) return {};
+  const path = `/cars/${data.make.slug}/${data.slug}`;
   return {
-    title: `Запчастини ${data.make.name} ${data.name}`,
-    alternates: { canonical: `/cars/${make}/${model}` },
+    ...seoMetadata(`Запчастини ${data.make.name} ${data.name}`, `Кузовні запчастини для ${data.make.name} ${data.name}. Оберіть покоління та роки випуску, перегляньте сумісні деталі з доставкою по Україні.`, path),
+    ...listingSeo(path, await searchParams),
   };
 }
 

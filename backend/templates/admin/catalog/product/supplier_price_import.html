@@ -1,0 +1,70 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Імпорт цін постачальника | Premier Parts{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; display: grid; gap: 24px;">
+  <div>
+    <h1 style="font-size: 24px; font-weight: 700;">Імпорт цін постачальника</h1>
+    <p>Завантажте оригінальний <strong>price.csv</strong> з колонками Brand, ItemNo, Price. Підтримуються CP1251 та UTF-8, роздільник «;».</p>
+    <p>Пошук товару: артикул + бренд. Кількість на складах, назви та інші дані не змінюються.</p>
+  </div>
+
+  {% if error %}<div role="alert" style="padding: 14px; border: 1px solid #b91c1c; border-radius: 8px; color: #b91c1c;">{{ error }}</div>{% endif %}
+
+  <form method="post" enctype="multipart/form-data" style="display: grid; gap: 14px; padding: 20px; border: 1px solid #d1d5db; border-radius: 12px;">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="preview">
+    <label for="supplier-file"><strong>Файл прайсу</strong></label>
+    <input id="supplier-file" type="file" name="file" accept=".csv,text/csv" required>
+    <label for="price-mode"><strong>Роздрібна ціна</strong></label>
+    <select id="price-mode" name="mode" style="padding: 10px; max-width: 580px; border: 1px solid #d1d5db; border-radius: 8px;">
+      <option value="preserve_margin" {% if mode == 'preserve_margin' %}selected{% endif %}>Зберігати поточну націнку</option>
+      <option value="supplier_as_retail" {% if mode == 'supplier_as_retail' %}selected{% endif %}>Ставити ціну з прайсу як роздрібну</option>
+    </select>
+    <p style="margin: 0; color: #6b7280;">За збереження націнки перший імпорт лише записує оптову ціну як базу. Надалі роздрібна ціна змінюється пропорційно зміні ціни постачальника.</p>
+    <button type="submit" style="width: fit-content; padding: 10px 18px; border-radius: 8px; background: #171717; color: white;">Перевірити файл</button>
+  </form>
+
+  {% if preview %}
+  <section style="display: grid; gap: 16px; padding: 20px; border: 1px solid #d1d5db; border-radius: 12px;">
+    <h2 style="font-size: 20px; font-weight: 650;">Попередній перегляд</h2>
+    <div style="display: flex; gap: 18px; flex-wrap: wrap;">
+      <span>Рядків: <strong>{{ preview.rows }}</strong></span>
+      <span>Зіставлено рядків: <strong>{{ preview.matched_rows }}</strong></span>
+      <span>Зіставлено товарів: <strong>{{ preview.matched_products }}</strong></span>
+      <span>Зміниться роздрібна ціна: <strong>{{ preview.retail_changes }}</strong></span>
+      <span>База першого імпорту: <strong>{{ preview.baseline_products }}</strong></span>
+      <span>Не знайдено: <strong>{{ preview.unmatched_rows }}</strong></span>
+      <span>Некоректних: <strong>{{ preview.invalid_rows }}</strong></span>
+      <span>Конфліктних: <strong>{{ preview.conflicting_rows }}</strong></span>
+      <span>Повторів: <strong>{{ preview.duplicate_rows }}</strong></span>
+    </div>
+
+    {% if preview.issues %}
+      <details><summary>Приклади пропущених рядків (до 25)</summary>
+        <ul style="margin: 10px 0 0 20px; list-style: disc;">{% for issue in preview.issues %}<li>{{ issue }}</li>{% endfor %}</ul>
+      </details>
+    {% endif %}
+
+    {% if preview.changes %}
+      <div style="overflow: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead><tr><th>Артикул</th><th>Бренд</th><th>Ціна зараз</th><th>Ціна після</th><th>Оптова зараз</th><th>Оптова після</th></tr></thead>
+          <tbody>{% for change in preview.changes|slice:':20' %}
+            <tr><td>{{ change.sku }}</td><td>{{ change.brand }}</td><td>{{ change.old_price }}</td><td>{{ change.new_price }}</td><td>{{ change.old_supplier_price|default:'—' }}</td><td>{{ change.new_supplier_price }}</td></tr>
+          {% endfor %}</tbody>
+        </table>
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="apply">
+      <input type="hidden" name="token" value="{{ pending_token }}">
+      <button type="submit" style="padding: 10px 18px; border-radius: 8px; background: #171717; color: white;">Підтвердити імпорт</button>
+    </form>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

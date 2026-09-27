@@ -15,6 +15,7 @@ import type {
   ProductDetail,
   Promotion,
   SiteSettings,
+  SitemapIndex,
 } from "./types";
 
 const BASE = `${process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000"}/api`;
@@ -52,6 +53,7 @@ function qs(params: ListingQuery): string {
 export const getHome = () => apiGet<HomeData>("/home", { tags: ["home", "banners", "products", "promotions"] });
 export const getSettings = () => apiGet<SiteSettings>("/settings", { tags: ["settings"], revalidate: 3600 });
 export const getCategories = () => apiGet<CategoryNode[]>("/categories", { tags: ["categories"], revalidate: 3600 });
+export const getSitemapIndex = () => apiGet<SitemapIndex>("/seo/sitemap-index", { tags: ["products", "makes"], revalidate: 3600 });
 export const getCategory = (slug: string) =>
   apiGet<CategoryNode>(`/categories/${encodeURIComponent(slug)}`, { tags: ["categories", `category:${slug}`] });
 export const getProduct = (slug: string) =>

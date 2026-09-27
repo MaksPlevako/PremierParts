@@ -56,6 +56,24 @@ def categories(request):
 
 
 @api_view(["GET"])
+def sitemap_index(request):
+    """Small, unpaginated index of public catalogue URLs for the frontend sitemap."""
+    products = Product.objects.filter(is_active=True).order_by("id").values_list("slug", "updated_at")
+    cars = (
+        Generation.objects.filter(fitments__product__is_active=True)
+        .order_by()
+        .values_list("model__make__slug", "model__slug", "slug")
+        .distinct()
+    )
+    return Response(
+        {
+            "products": [{"slug": slug, "updated_at": updated_at} for slug, updated_at in products],
+            "cars": list(cars),
+        }
+    )
+
+
+@api_view(["GET"])
 def category_detail(request, slug):
     cat = get_object_or_404(Category.objects.select_related("parent"), slug=slug, is_active=True)
     counts = category_counts()

@@ -10,17 +10,18 @@ import { getCar, listProducts } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
 import { cn } from "@/lib/format";
 import { listingQuery, pickListingParams } from "@/lib/listing-params";
+import { listingSeo, seoMetadata } from "@/lib/seo";
 
 type Props = PageProps<"/[locale]/cars/[make]/[model]/[generation]">;
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { make, model, generation } = await params;
   const car = await getCar(make, model, generation);
   if (!car) return {};
+  const path = `/cars/${car.make_slug}/${car.model_slug}/${car.generation_slug}`;
   return {
-    title: `Запчастини для ${car.full_label}`,
-    description: `Фари, ліхтарі, бампери, крила, радіатори та скло для ${car.full_label}. Перевірена сумісність, доставка по Україні.`,
-    alternates: { canonical: `/cars/${make}/${model}/${generation}` },
+    ...seoMetadata(`Запчастини для ${car.full_label}`, `Фари, ліхтарі, бампери, крила, радіатори та скло для ${car.full_label}. Перевірена сумісність, доставка по Україні.`, path),
+    ...listingSeo(path, await searchParams),
   };
 }
 

@@ -2,6 +2,11 @@
 
 export type StockStatus = "in_stock" | "on_order" | "out_of_stock";
 
+export interface SitemapIndex {
+  products: { slug: string; updated_at: string }[];
+  cars: [make: string, model: string, generation: string][];
+}
+
 export interface ProductCard {
   id: number;
   slug: string;
@@ -260,6 +265,7 @@ export interface OrderSummary {
   city: string;
   np_branch: string;
   address: string;
+  tracking_number: string;
   payment_method: string;
   payment_label: string;
   comment: string;
@@ -278,6 +284,25 @@ export interface OrderSummary {
     qty: number;
     line_total: number;
   }[];
+}
+
+export interface AccountProfile {
+  email: string;
+  first_name: string;
+  last_name: string;
+  email_verified: boolean;
+  phone: string;
+  city: string;
+  address: string;
+  np_branch: string;
+  providers: string[];
+}
+
+export interface SavedCar {
+  id: number;
+  nickname: string;
+  vin: string;
+  car: CarRef;
 }
 
 export type ListingQuery = Partial<{

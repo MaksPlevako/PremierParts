@@ -8,10 +8,11 @@ import { Link } from "@/i18n/navigation";
 import { getCategories } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
 import { formatCount } from "@/lib/format";
+import { seoMetadata } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("catalog");
-  return { title: t("title"), description: t("subtitle"), alternates: { canonical: "/catalog" } };
+  return seoMetadata(t("title"), t("subtitle"), "/catalog");
 }
 
 export default async function CatalogPage({ params }: PageProps<"/[locale]/catalog">) {

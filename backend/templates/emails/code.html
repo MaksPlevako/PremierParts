@@ -1,0 +1,10 @@
+{% extends "emails/base.html" %}
+{% block preheader %}Ваш код підтвердження дійсний 10 хвилин.{% endblock %}
+{% block eyebrow %}Безпека облікового запису{% endblock %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+  <p style="margin:0 0 20px;color:#4e5862;font-size:15px;line-height:1.65;">{{ introduction }}</p>
+  <div style="padding:22px;text-align:center;background:#f7f2e7;border:1px solid #ead8aa;color:#15181c;font-size:34px;font-weight:bold;letter-spacing:9px;">{{ code }}</div>
+  <p style="margin:18px 0 0;color:#4e5862;font-size:14px;line-height:1.6;">Код дійсний 10 хвилин. Нікому його не повідомляйте.</p>
+  <p style="margin:12px 0 0;color:#7a818a;font-size:13px;line-height:1.6;">Якщо ви не запитували цей код, просто проігноруйте лист.</p>
+{% endblock %}

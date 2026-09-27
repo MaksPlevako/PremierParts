@@ -11,16 +11,17 @@ import { getBanners, getCategory, listProducts } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
 import { cn } from "@/lib/format";
 import { listingQuery, pickListingParams } from "@/lib/listing-params";
+import { listingSeo, seoMetadata } from "@/lib/seo";
 
-export async function generateMetadata({ params }: PageProps<"/[locale]/category/[slug]">): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps<"/[locale]/category/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const cat = await getCategory(slug);
   if (!cat) return {};
   const title = `${cat.name} — купити з доставкою по Україні`;
+  const path = `/category/${cat.slug}`;
   return {
-    title,
-    description: `${cat.name}: ${cat.product_count} позицій для 50+ марок авто. Фото, OEM-номери, перевірка сумісності з вашим авто. Доставка Новою Поштою.`,
-    alternates: { canonical: `/category/${cat.slug}` },
+    ...seoMetadata(title, `${cat.name}: ${cat.product_count} позицій для 50+ марок авто. Фото, OEM-номери, перевірка сумісності з вашим авто. Доставка Новою Поштою.`, path),
+    ...listingSeo(path, await searchParams),
   };
 }
 

@@ -1,0 +1,13 @@
+{% extends "emails/base.txt" %}{% block content %}{% if internal %}Нове замовлення{% else %}Ми отримали ваше замовлення{% endif %} {{ order.number }}
+
+{% for item in items %}{{ item.name }} ({{ item.sku }}) × {{ item.qty }} — {{ item.total }}
+{% endfor %}Разом: {{ total }}
+{% if internal %}Клієнт: {{ order.customer_name|default:"—" }}
+Телефон: {{ order.phone }}
+Email: {{ order.email|default:"—" }}
+{% endif %}Доставка: {{ delivery }}{% if destination %}, {{ destination }}{% endif %}
+Оплата: {{ payment }}
+{% if car %}Авто: {{ car }}
+{% endif %}{% if order.comment %}Коментар: {{ order.comment }}
+{% endif %}{% if action_url %}Переглянути замовлення: {{ action_url }}
+{% endif %}{% endblock %}

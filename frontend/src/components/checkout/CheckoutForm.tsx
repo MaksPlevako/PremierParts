@@ -3,7 +3,7 @@
 import { Banknote, Building2, Car, CreditCard, Loader2, MapPin, Package, Truck } from "lucide-react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 
 import { Link, useRouter } from "@/i18n/navigation";
@@ -44,6 +44,17 @@ export function CheckoutForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [sending, setSending] = useState(false);
   const [serverError, setServerError] = useState(false);
+
+  useEffect(() => {
+    browserApi.profile().then((profile) => {
+      setName((value) => value || [profile.first_name, profile.last_name].filter(Boolean).join(" "));
+      setPhone((value) => value === "+380" ? profile.phone || value : value);
+      setEmail((value) => value || profile.email);
+      setCity((value) => value || profile.city);
+      setBranch((value) => value || profile.np_branch);
+      setAddress((value) => value || profile.address);
+    }).catch(() => undefined);
+  }, []);
 
   const schema = useMemo(
     () =>

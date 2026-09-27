@@ -5,8 +5,13 @@ import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { Link } from "@/i18n/navigation";
 import { getPromotions } from "@/lib/api";
 import { readCarCookie } from "@/lib/car-cookie";
+import { seoMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Акції та знижки", alternates: { canonical: "/promotions" } };
+export const metadata: Metadata = seoMetadata(
+  "Акції та знижки",
+  "Актуальні акції на автозапчастини Premier Parts. Перегляньте пропозиції та знайдіть деталі для свого автомобіля.",
+  "/promotions",
+);
 
 const dateFmt = new Intl.DateTimeFormat("uk-UA", { day: "numeric", month: "long" });
 

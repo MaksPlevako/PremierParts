@@ -44,6 +44,7 @@ export function MyCarStrip() {
               <button
                 type="button"
                 onClick={openPicker}
+                disabled={!mounted}
                 className="inline-flex h-12 items-center gap-2 rounded-[14px] bg-gold px-6 font-bold text-[#1e1606] shadow-gold"
               >
                 <Car className="size-4" /> {t("myCarCta")}

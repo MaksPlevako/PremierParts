@@ -1,0 +1,17 @@
+{% extends "emails/base.html" %}
+{% block preheader %}Замовлення {{ order.number }} · {{ total }}{% endblock %}
+{% block eyebrow %}{% if internal %}Нове замовлення{% else %}Ваше замовлення{% endif %}{% endblock %}
+{% block title %}{% if internal %}Замовлення {{ order.number }}{% else %}Дякуємо за замовлення!{% endif %}{% endblock %}
+{% block content %}
+  <p style="margin:0 0 22px;color:#4e5862;font-size:15px;line-height:1.65;">{% if internal %}Надійшло нове замовлення. Зв’яжіться з клієнтом для підтвердження деталей.{% else %}Ми отримали замовлення <strong>{{ order.number }}</strong>. Менеджер зв’яжеться з вами для підтвердження.{% endif %}</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+    {% for item in items %}<tr><td style="padding:13px 0;border-bottom:1px solid #e9ebed;color:#20242a;font-size:14px;line-height:1.45;"><strong>{{ item.name }}</strong><br><span style="color:#818992;font-size:12px;">{{ item.sku }} · {{ item.qty }} шт.</span></td><td align="right" style="padding:13px 0;border-bottom:1px solid #e9ebed;color:#20242a;font-size:14px;white-space:nowrap;">{{ item.total }}</td></tr>{% endfor %}
+    <tr><td style="padding:17px 0;color:#15181c;font-size:15px;font-weight:bold;">Разом</td><td align="right" style="padding:17px 0;color:#15181c;font-size:20px;font-weight:bold;white-space:nowrap;">{{ total }}</td></tr>
+  </table>
+  <div style="padding:17px 18px;background:#f7f8f9;color:#4e5862;font-size:13px;line-height:1.8;">
+    {% if internal %}<strong>Клієнт:</strong> {{ order.customer_name|default:"—" }}<br><strong>Телефон:</strong> {{ order.phone }}<br>{% if order.email %}<strong>Email:</strong> {{ order.email }}<br>{% endif %}{% endif %}
+    <strong>Доставка:</strong> {{ delivery }}{% if destination %}, {{ destination }}{% endif %}<br>
+    <strong>Оплата:</strong> {{ payment }}{% if car %}<br><strong>Авто:</strong> {{ car }}{% endif %}{% if order.comment %}<br><strong>Коментар:</strong> {{ order.comment }}{% endif %}
+  </div>
+  {% if action_url %}<p style="margin:26px 0 0;"><a href="{{ action_url }}" style="display:inline-block;padding:13px 20px;background:#c9a04a;color:#15181c;text-decoration:none;font-size:14px;font-weight:bold;">{% if internal %}Відкрити замовлення{% else %}Переглянути замовлення{% endif %}</a></p>{% endif %}
+{% endblock %}
