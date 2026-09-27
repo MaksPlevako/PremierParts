@@ -111,6 +111,11 @@ def product_detail(request, slug):
     fitments = sorted(
         (car_ref(f.generation) for f in product.fitments.all()), key=lambda r: (r["make"], r["label"])
     )
+    forma_item = getattr(product, "forma_item", None)
+    attributes = (
+        [{"name": row.attribute.name, "value": row.value} for row in forma_item.attributes.select_related("attribute")]
+        if forma_item else []
+    )
     data.update(
         {
             "description": product.description,
@@ -120,6 +125,7 @@ def product_detail(request, slug):
             "images": [{"url": i.image.url, "alt": i.alt or product.name} for i in product.images.all() if i.image],
             "part_numbers": [{"number": pn.number, "kind": pn.kind} for pn in product.part_numbers.all()],
             "fitments": fitments,
+            "attributes": attributes,
             "promotion": {"slug": promo.slug, "title": promo.title} if promo else None,
             "breadcrumbs": crumbs,
             "related": product_cards(_related(product), promos),
@@ -135,7 +141,7 @@ def makes(request):
 
 
 def _generation_data(gen: Generation, counts: dict[int, int]) -> dict:
-    return {
+    data = {
         "id": gen.id,
         "slug": gen.slug,
         "label": gen.label,
@@ -144,6 +150,9 @@ def _generation_data(gen: Generation, counts: dict[int, int]) -> dict:
         "year_to": gen.year_to,
         "product_count": counts.get(gen.id, 0),
     }
+    if gen.source_label:
+        data["type_label"] = gen.source_label
+    return data
 
 
 @api_view(["GET"])

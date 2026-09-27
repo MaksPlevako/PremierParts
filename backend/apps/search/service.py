@@ -37,7 +37,18 @@ class Clause:
     def django(self) -> Q:
         f, v = self.field, self.value
         if f == "category_ids":
-            return Q(category_id=v) | Q(category__parent_id=v)
+            children = {}
+            for category_id, parent_id in Category.objects.order_by().values_list("id", "parent_id"):
+                children.setdefault(parent_id, []).append(category_id)
+            descendants = set()
+            pending = [v]
+            while pending:
+                category_id = pending.pop()
+                if category_id in descendants:
+                    continue
+                descendants.add(category_id)
+                pending.extend(children.get(category_id, []))
+            return Q(category_id__in=descendants)
         if f == "make_ids":
             return Q(fitments__generation__model__make_id=v)
         if f == "model_ids":

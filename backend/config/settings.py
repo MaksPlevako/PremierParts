@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.orders",
     "apps.accounts",
     "apps.importer",
+    "apps.forma",
     "apps.dashboard",
 ]
 
@@ -235,6 +236,7 @@ UNFOLD = {
                     {"title": _("Моделі"), "icon": "garage", "link": reverse_lazy("admin:catalog_carmodel_changelist")},
                     {"title": _("Серії (роки)"), "icon": "calendar_month", "link": reverse_lazy("admin:catalog_generation_changelist")},
                     {"title": _("Виробники деталей"), "icon": "factory", "link": reverse_lazy("admin:catalog_manufacturer_changelist")},
+                    {"title": _("Синхронізація Forma"), "icon": "sync", "link": reverse_lazy("admin:forma_formasyncjob_changelist")},
                 ],
             },
             {

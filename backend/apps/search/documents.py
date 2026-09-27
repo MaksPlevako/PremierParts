@@ -27,14 +27,27 @@ def _unique(values):
     return list(dict.fromkeys(v for v in values if v not in (None, "")))
 
 
-def product_document(p: Product, promos: list[ActivePromotion]) -> dict:
+def product_document(p: Product, promos: list[ActivePromotion], categories=None) -> dict:
     info = effective_price(p, promos)
     gens = [f.generation for f in p.fitments.all()]
     numbers = [normalize_part_number(p.sku), p.sku] if p.sku else []
     for pn in p.part_numbers.all():
         numbers.extend([pn.normalized, pn.number])
-    category_ids = [p.category_id] + ([p.category.parent_id] if p.category.parent_id else [])
-    category_names = [p.category.name] + ([p.category.parent.name] if p.category.parent_id else [])
+    category_ids = []
+    category_names = []
+    if categories is None:
+        category = p.category
+        while category and category.id not in category_ids:
+            category_ids.append(category.id)
+            category_names.append(category.name)
+            category = category.parent
+    else:
+        category_id = p.category_id
+        while category_id and category_id not in category_ids and category_id in categories:
+            parent_id, name = categories[category_id]
+            category_ids.append(category_id)
+            category_names.append(name)
+            category_id = parent_id
     image = next(iter(p.images.all()), None)
     final = info.final
     return {

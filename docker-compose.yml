@@ -53,6 +53,26 @@ services:
       meilisearch:
         condition: service_started
 
+  forma-worker:
+    profiles: ["forma"]
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://premier:${POSTGRES_PASSWORD:-premier}@postgres:5432/premier
+      NEXT_REVALIDATE_URL: http://frontend:3000/api/revalidate
+      MEDIA_ROOT: /data/media
+      IMPORT_CACHE_DIR: /data/cache
+    command: >-
+      sh -c "python manage.py migrate --noinput &&
+      python manage.py forma_worker"
+    volumes:
+      - ./backend:/app
+      - media:/data/media
+      - importcache:/data/cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   frontend:
     build:
       context: ./frontend

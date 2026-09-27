@@ -88,6 +88,7 @@ class Generation(models.Model):
     model = models.ForeignKey(CarModel, on_delete=models.CASCADE, related_name="generations", verbose_name=_("модель"))
     year_from = models.PositiveSmallIntegerField(_("рік від"), null=True, blank=True)
     year_to = models.PositiveSmallIntegerField(_("рік до"), null=True, blank=True, help_text=_("Порожньо — випускається досі"))
+    source_label = models.CharField(_("назва типу з джерела"), max_length=120, blank=True)
     slug = models.SlugField(max_length=40)
     legacy_id = models.CharField(max_length=40, blank=True, db_index=True)
 
@@ -117,7 +118,8 @@ class Generation(models.Model):
     @property
     def label(self) -> str:
         years = self.years_label
-        return f"{self.model.name} ({years})" if years else self.model.name
+        detail = years or self.source_label
+        return f"{self.model.name} ({detail})" if detail else self.model.name
 
     @property
     def full_label(self) -> str:

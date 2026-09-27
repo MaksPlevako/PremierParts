@@ -6,7 +6,7 @@ from functools import lru_cache
 import meilisearch
 from django.conf import settings
 
-from apps.catalog.models import CarModel, Make
+from apps.catalog.models import CarModel, Category, Make
 from apps.catalog.services.pricing import live_promotions
 
 from .documents import load_products, product_document
@@ -75,11 +75,15 @@ def ensure_settings() -> None:
 def reindex_all(batch: int = 1000) -> int:
     ensure_settings()
     promos = live_promotions()
+    categories = {
+        category_id: (parent_id, name)
+        for category_id, parent_id, name in Category.objects.order_by().values_list("id", "parent_id", "name")
+    }
     _wait(index().delete_all_documents())
     total = 0
     docs: list[dict] = []
     for product in load_products().iterator(chunk_size=500):
-        docs.append(product_document(product, promos))
+        docs.append(product_document(product, promos, categories))
         if len(docs) >= batch:
             _wait(index().add_documents(docs, primary_key="id"))
             total += len(docs)
@@ -97,7 +101,11 @@ def upsert_products(ids: list[int]) -> None:
         return
     promos = live_promotions()
     products = list(load_products(ids))
-    docs = [product_document(p, promos) for p in products]
+    categories = {
+        category_id: (parent_id, name)
+        for category_id, parent_id, name in Category.objects.order_by().values_list("id", "parent_id", "name")
+    }
+    docs = [product_document(p, promos, categories) for p in products]
     if docs:
         index().add_documents(docs, primary_key="id")
     missing = set(ids) - {p.id for p in products}

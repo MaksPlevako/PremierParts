@@ -35,6 +35,7 @@ export interface CarRef {
   label: string;
   full_label: string;
   years_label: string;
+  type_label?: string;
   market: string;
 }
 
@@ -56,6 +57,7 @@ export interface ProductDetail extends ProductCard {
   images: { url: string; alt: string }[];
   part_numbers: { number: string; kind: "sku" | "oem" | "cross" }[];
   fitments: CarRef[];
+  attributes: { name: string; value: string }[];
   promotion: { slug: string; title: string } | null;
   breadcrumbs: { name: string; href: string }[];
   related: ProductCard[];
@@ -88,6 +90,7 @@ export interface GenerationItem {
   slug: string;
   label: string;
   years_label: string;
+  type_label?: string;
   year_from: number | null;
   year_to: number | null;
   product_count: number;

@@ -43,7 +43,7 @@ export default async function GenerationPage({ params, searchParams }: Props) {
           { name: t("common.cars"), href: "/cars" },
           { name: car.make, href: `/cars/${make}` },
           { name: car.model, href: `/cars/${make}/${model}` },
-          { name: car.years_label || "усі роки", href: path },
+          { name: car.years_label || car.type_label || "усі роки", href: path },
         ]}
       />
       <div className="mt-4 mb-6 flex flex-col gap-5 rounded-[26px] bg-lux p-6 text-white sm:flex-row sm:items-center sm:p-8">

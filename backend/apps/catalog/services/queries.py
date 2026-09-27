@@ -73,11 +73,14 @@ def category_counts() -> dict[int, int]:
     rows = Product.objects.filter(is_active=True).order_by().values("category_id").annotate(n=Count("id"))
     direct = {row["category_id"]: row["n"] for row in rows}
     totals: dict[int, int] = defaultdict(int)
-    for cat in Category.objects.only("id", "parent_id"):
-        n = direct.get(cat.id, 0)
-        totals[cat.id] += n
-        if cat.parent_id:
-            totals[cat.parent_id] += n
+    parents = dict(Category.objects.order_by().values_list("id", "parent_id"))
+    for category_id, count in direct.items():
+        current = category_id
+        visited = set()
+        while current and current not in visited:
+            totals[current] += count
+            visited.add(current)
+            current = parents.get(current)
     return totals
 
 
@@ -100,12 +103,18 @@ def category_tree() -> list[dict]:
     for c in cats:
         if c.parent_id:
             children[c.parent_id].append(c)
-    return [category_node(c, counts, children[c.id]) for c in cats if c.parent_id is None]
+
+    def node_with_descendants(category: Category) -> dict:
+        node = category_node(category, counts)
+        node["children"] = [node_with_descendants(child) for child in children[category.id]]
+        return node
+
+    return [node_with_descendants(c) for c in cats if c.parent_id is None]
 
 
 def car_ref(gen: Generation) -> dict:
     model = gen.model
-    return {
+    data = {
         "generation_id": gen.id,
         "make": model.make.name,
         "make_slug": model.make.slug,
@@ -117,6 +126,9 @@ def car_ref(gen: Generation) -> dict:
         "years_label": gen.years_label,
         "market": model.market,
     }
+    if gen.source_label:
+        data["type_label"] = gen.source_label
+    return data
 
 
 def makes_with_counts() -> list[dict]:

@@ -49,7 +49,7 @@ export default async function ModelPage({ params, searchParams }: PageProps<"/[l
             href={`/cars/${make}/${model}/${g.slug}`}
             className="rounded-[12px] bg-white px-4 py-2.5 text-[14px] font-semibold ring-1 ring-platinum-200 hover:ring-gold-400"
           >
-            {g.years_label || "усі роки"} <span className="font-normal text-platinum-400">{g.product_count}</span>
+            {g.years_label || g.type_label || "усі роки"} <span className="font-normal text-platinum-400">{g.product_count}</span>
           </Link>
         ))}
       </div>

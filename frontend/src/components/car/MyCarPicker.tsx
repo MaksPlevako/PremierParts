@@ -27,6 +27,7 @@ function toCarRef(make: MakeDetail, model: CarModelItem, gen: GenerationItem): C
     label: gen.label,
     full_label: `${make.name} ${gen.label}`,
     years_label: gen.years_label,
+    type_label: gen.type_label,
     market: model.market,
   };
 }
@@ -161,7 +162,7 @@ export function MyCarPicker() {
                         className="flex items-center justify-between rounded-[14px] p-4 text-left ring-1 ring-platinum-200 transition hover:bg-platinum-50 hover:ring-gold-400"
                       >
                         <span>
-                          <span className="block font-display text-[16px] font-medium">{g.years_label || t("noYears")}</span>
+                          <span className="block font-display text-[16px] font-medium">{g.years_label || g.type_label || t("noYears")}</span>
                           <span className="text-[12px] text-platinum-500">{g.product_count} деталей</span>
                         </span>
                         <ChevronRight className="size-4 text-platinum-400" />
@@ -248,7 +249,7 @@ function ModelStep({ make, filter, onPick }: { make: MakeDetail; filter: string;
                 <span className="min-w-0">
                   <span className="block truncate text-[14px] font-semibold">{m.name}</span>
                   <span className="text-[11.5px] text-platinum-500">
-                    {m.generations.map((g) => g.years_label).filter(Boolean).join(", ") || "—"}
+                    {m.generations.map((g) => g.years_label || g.type_label).filter(Boolean).join(", ") || "—"}
                   </span>
                 </span>
                 <span className="ml-2 shrink-0 text-[11px] font-semibold text-gold-700">{m.product_count || ""}</span>

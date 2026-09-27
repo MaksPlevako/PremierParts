@@ -51,6 +51,7 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/produ
     [t("product.condition"), t("product.new")],
     [t("product.side"), product.side === "left" ? t("catalog.left") : product.side === "right" ? t("catalog.right") : null],
     [t("product.position"), product.position === "front" ? t("product.front") : product.position === "rear" ? t("product.rear") : null],
+    ...(product.attributes ?? []).map(({ name, value }) => [name, value]),
   ].filter(([, v]) => v) as [string, string][];
 
   return (
@@ -104,7 +105,7 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/produ
                       <span className="font-semibold">
                         {f.make} {f.model}
                       </span>
-                      <span className="text-[13px] text-platinum-500">{f.years_label || "усі роки"}</span>
+                      <span className="text-[13px] text-platinum-500">{f.years_label || f.type_label || "усі роки"}</span>
                     </Link>
                   </li>
                 ))}

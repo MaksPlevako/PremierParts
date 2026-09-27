@@ -92,6 +92,7 @@ def dashboard_callback(request, context):
                 {"title": "Новий банер", "icon": "add_photo_alternate", "href": reverse("admin:content_banner_add")},
                 {"title": "Нова акція", "icon": "percent", "href": reverse("admin:content_promotion_add")},
                 {"title": "Імпорт прайсу постачальника", "icon": "upload_file", "href": reverse("admin:catalog_product_supplier_price_import")},
+                {"title": "Синхронізація Forma", "icon": "sync", "href": reverse("admin:forma_formasyncjob_changelist")},
                 {"title": "Переіндексувати пошук", "icon": "sync", "href": reverse("admin:search_searchsynonym_reindex")},
                 {"title": "Відкрити сайт", "icon": "open_in_new", "href": "/"},
             ],

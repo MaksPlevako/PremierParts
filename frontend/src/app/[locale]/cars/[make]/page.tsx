@@ -58,7 +58,7 @@ export default async function MakePage({ params }: PageProps<"/[locale]/cars/[ma
                           g.product_count ? "bg-white ring-platinum-200 hover:ring-gold-400" : "text-platinum-400 ring-platinum-100",
                         )}
                       >
-                        {g.years_label || "усі роки"}
+                        {g.years_label || g.type_label || "усі роки"}
                         {g.product_count > 0 && <span className="ml-1 font-normal text-platinum-400">{g.product_count}</span>}
                       </Link>
                     ))}

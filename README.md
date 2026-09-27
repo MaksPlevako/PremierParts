@@ -72,6 +72,16 @@ cd frontend && npx playwright test            # e2e на десктопі й м�
 
 Типовий режим **Зберігати поточну націнку**: перший імпорт фіксує оптову ціну окремо й не змінює роздрібну; наступні імпорти змінюють роздрібну пропорційно зміні оптової. Якщо потрібно поставити оптову ціну без націнки, виберіть **Ставити ціну з прайсу як роздрібну** й перевірте суми перед підтвердженням. Перед використанням застосуйте міграції: `docker compose exec backend python manage.py migrate`.
 
+### Forma Parts B2B
+
+Інтеграція використовує Django models/migrations і окремі таблиці зовнішніх ID Forma; існуючі товари, категорії та авто повторно використовуються за однозначним збігом. План та непідтверджені API-відомості — у [`docs/forma-integration-plan.md`](docs/forma-integration-plan.md).
+
+У приватному `.env` задайте `FORMA_B2B_TOKEN`. Для FULL sync додайте **підтверджені через Network** `FORMA_CATEGORY_TREE_URL`, `FORMA_CATEGORY_TREE_METHOD` і, за потреби, `FORMA_CATEGORY_TREE_BODY` (JSON). Для фото задайте підтверджений HTTPS `FORMA_IMAGE_BASE_URL`; без нього товари синхронізуються, а фото пропускаються з повідомленням у job. Токен, пароль, cookie і HAR із ними не комітьте. Доступні налаштування паралельності й розкладу є в `.env.example`.
+
+Після міграцій (`docker compose exec backend python manage.py migrate`) запустіть окремий worker: `docker compose --profile forma up -d forma-worker`. В адмінці **Каталог → Синхронізація Forma → Додати** оберіть `full` або `fast`; HTTP-запит лише створить job. `FORMA_AUTOSYNC=true` у `.env` вмикає періодичні запуски (типово FAST раз на 4 години, FULL раз на 24 години); worker потрібно перестворити після зміни `.env`. Для ручного CLI запуску: `docker compose exec backend python manage.py sync_forma --mode full` або `--mode fast`. Для обмеженої перевірки додайте `--category-id 790`; для підтвердженого локального дерева можливий `--tree-file /app/path/to/tree.json` у FULL режимі.
+
+Відомі запити Forma: POST `/api/items/ByTreeId` із тілом JSON number і POST `/api/Catalog/ItemVehicles` із тілом JSON string. `retail` оновлює роздрібну ціну, а `price` зберігається окремо без припущення про закупівельну ціну. Складський `stock` розбирається як вкладений JSON; `>3` означає щонайменше 4 одиниці. Фото зберігаються в media storage сервера без дублювання при повторному запуску. Endpoint авторизації, endpoint дерева, base URL фото й додаткова галерея поки не підтверджені; до отримання HAR вони не вигадуються.
+
 ## Що всередині
 
 ```
