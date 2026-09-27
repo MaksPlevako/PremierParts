@@ -11,7 +11,7 @@ from apps.core.revalidate import revalidate_tags, suppress_revalidation
 from apps.search import index as search_index
 
 from .client import FormaAuthError, FormaClient, FormaConfigurationError, FormaError
-from .images import image_base_configured, needs_first_image, sync_first_image
+from .images import needs_category_image, needs_first_image, sync_category_image, sync_first_image
 from .models import FormaCategory, FormaSyncJob
 from .normalize import unwrap_list
 from .upsert import ProductMatcher, sync_categories, upsert_item, upsert_vehicle_fitment
@@ -56,9 +56,6 @@ def _sync_images(job, client, items):
     pictured = [item for item in items if item.raw_data.get("firstPic")]
     if not pictured:
         return
-    if not image_base_configured():
-        _error(job, "photos", FormaConfigurationError("FORMA_IMAGE_BASE_URL не налаштовано; фото пропущені"))
-        return
     pictured = [item for item in pictured if needs_first_image(item, client)]
     if not pictured:
         return
@@ -75,6 +72,29 @@ def _sync_images(job, client, items):
                 _error(job, f"photo {item.item_no}", exc)
 
 
+def _sync_category_images(job, client, categories):
+    pictured = []
+    for category in categories:
+        try:
+            if needs_category_image(category, client):
+                pictured.append(category)
+        except Exception as exc:
+            _error(job, f"category photo {category.external_id}", exc)
+    with ThreadPoolExecutor(max_workers=client.concurrency) as pool:
+        futures = {
+            pool.submit(client.download_image, category.source_image_path, category=True): category
+            for category in pictured
+        }
+        for future in as_completed(futures):
+            category = futures[future]
+            try:
+                sync_category_image(category, client, downloaded=future.result())
+            except FormaAuthError:
+                raise
+            except Exception as exc:
+                _error(job, f"category photo {category.external_id}", exc)
+
+
 def run_sync_job(job: FormaSyncJob, *, client: FormaClient | None = None, category_tree=None, category_ids=None) -> FormaSyncJob:
     """Run one job. Unknown Forma endpoints fail visibly and never use guessed URLs."""
     own_client = client is None
@@ -88,8 +108,13 @@ def run_sync_job(job: FormaSyncJob, *, client: FormaClient | None = None, catego
     try:
         if job.mode == FormaSyncJob.Mode.FULL:
             tree = category_tree if category_tree is not None else client.get_category_tree()
+            category_seen_at = timezone.now()
             with suppress_revalidation(), transaction.atomic():
-                categories = sync_categories(tree)
+                categories = sync_categories(tree, seen_at=category_seen_at)
+            all_categories = list(
+                FormaCategory.objects.filter(last_seen_at=category_seen_at, active=True)
+                .select_related("category")
+            )
         elif job.mode == FormaSyncJob.Mode.FAST:
             categories = list(FormaCategory.objects.filter(is_leaf=True, active=True).select_related("category"))
         else:
@@ -97,8 +122,21 @@ def run_sync_job(job: FormaSyncJob, *, client: FormaClient | None = None, catego
         if category_ids:
             wanted = set(category_ids)
             categories = [category for category in categories if category.external_id in wanted]
+            if job.mode == FormaSyncJob.Mode.FULL:
+                by_category_id = {link.category_id: link for link in all_categories}
+                image_category_ids = set()
+                for leaf in categories:
+                    current = leaf.category_id
+                    while current and current not in image_category_ids and current in by_category_id:
+                        image_category_ids.add(current)
+                        current = by_category_id[current].category.parent_id
+                all_categories = [link for link in all_categories if link.category_id in image_category_ids]
         if not categories:
             raise FormaConfigurationError("Немає leaf-категорій Forma для синхронізації")
+
+        if job.mode == FormaSyncJob.Mode.FULL:
+            with suppress_revalidation():
+                _sync_category_images(job, client, all_categories)
 
         matcher = ProductMatcher()
         with suppress_revalidation(), ThreadPoolExecutor(max_workers=client.concurrency) as pool:
@@ -152,7 +190,7 @@ def run_sync_job(job: FormaSyncJob, *, client: FormaClient | None = None, catego
             else FormaSyncJob.Status.WITH_ERRORS if job.errors_count
             else FormaSyncJob.Status.COMPLETED
         )
-        if job.products_processed:
+        if job.mode == FormaSyncJob.Mode.FULL or job.products_processed:
             revalidate_tags(["products", "home", "categories", "makes"])
     except Exception as exc:
         _error(job, "sync", exc)

@@ -71,6 +71,7 @@ def sync_categories(payload, *, seen_at=None) -> list[FormaCategory]:
                 )
             link = FormaCategory(external_id=external_id, category=category)
         link.title = title
+        link.source_image_path = clean_name(raw.get("img"))[:500]
         link.item_group = clean_name(raw.get("itemGroup"))[:160]
         link.item_sub_group = clean_name(raw.get("itemSubGroup"))[:160]
         link.is_leaf = is_leaf

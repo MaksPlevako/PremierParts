@@ -1,7 +1,6 @@
 """Keep Forma photos in the configured Django media storage."""
 
 import hashlib
-import os
 from urllib.parse import urlsplit, urlunsplit
 
 from django.core.files.base import ContentFile
@@ -9,14 +8,44 @@ from django.core.files.storage import default_storage
 
 from apps.catalog.models import ProductImage
 
-from .models import FormaItem
+from .models import FormaCategory, FormaItem
 
 
 EXTENSIONS = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 
 
-def image_base_configured() -> bool:
-    return bool(os.environ.get("FORMA_IMAGE_BASE_URL", "").strip())
+def _category_prefix(link: FormaCategory, client) -> str:
+    url = client.category_image_url(link.source_image_path)
+    return "categories/forma/" + hashlib.sha256(url.encode("utf-8")).hexdigest()[:20] + "-"
+
+
+def needs_category_image(link: FormaCategory, client) -> bool:
+    if not link.source_image_path:
+        return False
+    category = link.category
+    if category.image and not category.image.name.startswith("categories/forma/"):
+        return False
+    prefix = _category_prefix(link, client)
+    return not (
+        category.image and category.image.name.startswith(prefix)
+        and default_storage.exists(category.image.name)
+    )
+
+
+def sync_category_image(link: FormaCategory, client, *, downloaded=None) -> bool:
+    if not needs_category_image(link, client):
+        return False
+    url, content, content_type = downloaded if downloaded is not None else client.download_image(
+        link.source_image_path, category=True,
+    )
+    prefix = _category_prefix(link, client)
+    path = prefix + hashlib.sha256(content).hexdigest()[:12] + EXTENSIONS[content_type]
+    if not default_storage.exists(path):
+        default_storage.save(path, ContentFile(content))
+    category = link.category
+    category.image = path
+    category.save(update_fields=["image"])
+    return True
 
 
 def needs_first_image(item: FormaItem, client) -> bool:

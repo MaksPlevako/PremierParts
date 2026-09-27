@@ -40,7 +40,7 @@ class FormaSyncJobAdmin(ModelAdmin):
 class FormaCategoryAdmin(ModelAdmin):
     list_display = ("external_id", "title", "category", "is_leaf", "active", "last_seen_at")
     search_fields = ("external_id", "title")
-    readonly_fields = ("external_id", "category", "title", "item_group", "item_sub_group", "is_leaf", "active", "raw_data", "last_seen_at")
+    readonly_fields = ("external_id", "category", "title", "source_image_path", "item_group", "item_sub_group", "is_leaf", "active", "raw_data", "last_seen_at")
 
 
 @admin.register(FormaItem)

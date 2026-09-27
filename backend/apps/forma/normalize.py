@@ -110,7 +110,9 @@ def category_nodes(payload):
         children = node.get("childElements") or []
         if not isinstance(children, list):
             raise FormaAPIError(f"Forma category {external_id}: childElements не є списком")
-        yield (node, parent_id, sort, not children)
+        supplier_sort = node.get("sort")
+        order = supplier_sort if isinstance(supplier_sort, int) and not isinstance(supplier_sort, bool) and supplier_sort >= 0 else sort
+        yield (node, parent_id, order, not children)
         for index, child in enumerate(children):
             yield from visit(child, external_id, index)
 

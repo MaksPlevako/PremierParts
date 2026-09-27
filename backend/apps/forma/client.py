@@ -10,6 +10,8 @@ from urllib.parse import urljoin, urlparse
 import httpx
 
 log = logging.getLogger(__name__)
+DEFAULT_IMAGE_BASE_URL = "https://img2.ad.ua/imgs/"
+DEFAULT_CATEGORY_IMAGE_BASE_URL = "https://img2.ad.ua/imgs/group-pic/"
 
 
 class FormaError(RuntimeError):
@@ -43,8 +45,8 @@ class FormaClient:
     ):
         self.base_url = (base_url or os.environ.get("FORMA_API_BASE_URL") or "https://ecom.ad.ua").rstrip("/")
         self.token = token if token is not None else os.environ.get("FORMA_B2B_TOKEN", "")
-        self.category_tree_url = category_tree_url or os.environ.get("FORMA_CATEGORY_TREE_URL", "")
-        self.category_tree_method = (category_tree_method or os.environ.get("FORMA_CATEGORY_TREE_METHOD") or "GET").upper()
+        self.category_tree_url = category_tree_url or os.environ.get("FORMA_CATEGORY_TREE_URL") or self.base_url + "/api/content/Catalog"
+        self.category_tree_method = (category_tree_method or os.environ.get("FORMA_CATEGORY_TREE_METHOD") or "POST").upper()
         self.category_tree_body = category_tree_body if category_tree_body is not None else os.environ.get("FORMA_CATEGORY_TREE_BODY", "")
         self.concurrency = max(1, min(int(concurrency or os.environ.get("FORMA_SYNC_CONCURRENCY", "5")), 20))
         self.delay = max(0.0, float(delay if delay is not None else os.environ.get("FORMA_SYNC_DELAY", "0.2")))
@@ -110,8 +112,6 @@ class FormaClient:
         raise FormaAPIError("Forma API: вичерпано спроби")
 
     def get_category_tree(self):
-        if not self.category_tree_url:
-            raise FormaConfigurationError("Невідомий endpoint дерева категорій: задайте підтверджений FORMA_CATEGORY_TREE_URL")
         if self.category_tree_method not in {"GET", "POST"}:
             raise FormaConfigurationError("FORMA_CATEGORY_TREE_METHOD має бути GET або POST")
         body = None
@@ -132,24 +132,33 @@ class FormaClient:
             raise FormaConfigurationError("itemNo порожній")
         return self._request("POST", self.base_url + "/api/Catalog/ItemVehicles", json_body=item_no)
 
-    def image_url(self, path: str) -> str:
-        base = os.environ.get("FORMA_IMAGE_BASE_URL", "").strip()
+    @staticmethod
+    def _image_url(path: str, base: str) -> str:
         parsed_base = urlparse(base)
         if parsed_base.scheme != "https" or not parsed_base.netloc:
-            raise FormaConfigurationError("Потрібен підтверджений HTTPS FORMA_IMAGE_BASE_URL")
+            raise FormaConfigurationError("Forma image base URL має використовувати HTTPS")
         url = urljoin(base.rstrip("/") + "/", path)
         parsed_url = urlparse(url)
         if parsed_url.scheme != "https" or parsed_url.netloc != parsed_base.netloc:
             raise FormaConfigurationError("Forma photo URL має належати налаштованому хосту")
         return url
 
-    def download_image(self, path: str) -> tuple[str, bytes, str]:
-        url = self.image_url(path)
+    def image_url(self, path: str) -> str:
+        base = os.environ.get("FORMA_IMAGE_BASE_URL", "").strip() or DEFAULT_IMAGE_BASE_URL
+        return self._image_url(path, base)
+
+    def category_image_url(self, path: str) -> str:
+        base = os.environ.get("FORMA_CATEGORY_IMAGE_BASE_URL", "").strip() or DEFAULT_CATEGORY_IMAGE_BASE_URL
+        return self._image_url(path, base)
+
+    def download_image(self, path: str, *, category=False) -> tuple[str, bytes, str]:
+        url = self.category_image_url(path) if category else self.image_url(path)
+        headers = {"Authorization": f"Bearer {self.token}"} if urlparse(url).netloc == urlparse(self.base_url).netloc else {}
         for attempt in range(3):
             self._throttle()
             try:
                 with self._slots, self._client.stream(
-                    "GET", url, headers={"Authorization": f"Bearer {self.token}"}
+                    "GET", url, headers=headers
                 ) as response:
                     if response.status_code == 401:
                         raise FormaAuthError("Forma photo повернуло 401")

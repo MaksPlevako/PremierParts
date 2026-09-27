@@ -6,6 +6,7 @@ class FormaCategory(models.Model):
     external_id = models.PositiveBigIntegerField(unique=True)
     category = models.OneToOneField("catalog.Category", on_delete=models.PROTECT, related_name="forma_link")
     title = models.CharField(max_length=160)
+    source_image_path = models.CharField(max_length=500, blank=True)
     item_group = models.CharField(max_length=160, blank=True)
     item_sub_group = models.CharField(max_length=160, blank=True)
     is_leaf = models.BooleanField(default=False)

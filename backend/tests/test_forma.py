@@ -61,13 +61,29 @@ def test_client_posts_raw_number_and_string_and_retries_429():
     assert all(request.headers["Authorization"] == "Bearer test-token" for request in seen)
 
 
-def test_client_401_and_unknown_category_endpoint():
+def test_client_401_on_authenticated_endpoints():
     transport = httpx.MockTransport(lambda request: httpx.Response(401))
     with FormaClient(token="test-token", delay=0, transport=transport) as client:
         with pytest.raises(FormaAuthError):
             client.get_item_vehicles("FP 0001 G135")
-        with pytest.raises(FormaConfigurationError, match="FORMA_CATEGORY_TREE_URL"):
+        with pytest.raises(FormaAuthError):
             client.get_category_tree()
+
+
+def test_client_uses_confirmed_catalog_post_by_default(monkeypatch):
+    monkeypatch.delenv("FORMA_CATEGORY_TREE_URL", raising=False)
+    monkeypatch.delenv("FORMA_CATEGORY_TREE_METHOD", raising=False)
+    seen = []
+
+    def handler(request):
+        seen.append(request)
+        return httpx.Response(200, json=TREE)
+
+    with FormaClient(token="test-token", delay=0, transport=httpx.MockTransport(handler)) as client:
+        assert client.get_category_tree() == TREE
+    assert seen[0].method == "POST"
+    assert str(seen[0].url) == "https://ecom.ad.ua/api/content/Catalog"
+    assert seen[0].content == b""
 
 
 def test_client_uses_configured_tree_request():
@@ -99,6 +115,16 @@ def test_image_url_requires_confirmed_host(monkeypatch):
         assert client.image_url("tcd-com/19000/a.jpg?1") == "https://images.forma.example/media/tcd-com/19000/a.jpg?1"
         with pytest.raises(FormaConfigurationError):
             client.image_url("https://unrelated.example/secret.jpg")
+
+
+def test_image_url_defaults_to_confirmed_product_host(monkeypatch):
+    monkeypatch.delenv("FORMA_IMAGE_BASE_URL", raising=False)
+    monkeypatch.delenv("FORMA_CATEGORY_IMAGE_BASE_URL", raising=False)
+    with FormaClient(token="test-token", delay=0) as client:
+        assert client.image_url("tcd-com/19000/0001G145.jpg?46290203") == (
+            "https://img2.ad.ua/imgs/tcd-com/19000/0001G145.jpg?46290203"
+        )
+        assert client.category_image_url("19/540.jpg") == "https://img2.ad.ua/imgs/group-pic/19/540.jpg"
 
 
 def test_nested_tree_stock_and_vehicle_normalization():
@@ -226,8 +252,43 @@ def test_photo_downloaded_once_into_server_storage(tmp_path, settings, monkeypat
         assert not needs_first_image(item, client)
         assert not sync_first_image(item, client)
     assert len(calls) == 1
+    assert "Authorization" not in calls[0].headers
     assert item.product.images.count() == 1
     assert item.product.images.first().image.name.startswith("products/forma/")
+
+
+@pytest.mark.django_db
+def test_full_sync_downloads_category_image_once(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
+    tree = [
+        {"id": 540, "title": "Автомобільне кріплення", "img": "19/540.jpg", "childElements": []},
+        {"id": 541, "title": "Інша категорія", "img": "19/541.jpg", "childElements": []},
+    ]
+
+    class FakeClient:
+        concurrency = 1
+        downloads = 0
+
+        def get_items_by_tree_id(self, tree_id):
+            return []
+
+        def category_image_url(self, path):
+            return "https://img2.ad.ua/imgs/group-pic/" + path
+
+        def download_image(self, path, *, category=False):
+            assert category is True
+            self.downloads += 1
+            return self.category_image_url(path), b"category-photo", "image/jpeg"
+
+    client = FakeClient()
+    for _ in range(2):
+        job = FormaSyncJob.objects.create(mode="full")
+        run_sync_job(job, client=client, category_tree=tree, category_ids=[540])
+        assert job.status == "completed"
+    assert client.downloads == 1
+    category = FormaCategory.objects.get(external_id=540).category
+    assert category.image.name.startswith("categories/forma/")
+    assert not FormaCategory.objects.get(external_id=541).category.image
 
 
 @pytest.mark.django_db
@@ -249,12 +310,12 @@ def test_admin_can_queue_job_and_worker_claims_it(client, monkeypatch):
 
 
 @pytest.mark.django_db
-def test_scheduler_does_not_queue_without_confirmed_tree_endpoint(monkeypatch):
+def test_scheduler_queues_full_with_confirmed_catalog_endpoint(monkeypatch):
     monkeypatch.setenv("FORMA_AUTOSYNC", "true")
     monkeypatch.setenv("FORMA_B2B_TOKEN", "test-token")
     monkeypatch.delenv("FORMA_CATEGORY_TREE_URL", raising=False)
     schedule_due_jobs()
-    assert FormaSyncJob.objects.count() == 0
+    assert list(FormaSyncJob.objects.values_list("mode", flat=True)) == ["full"]
 
 
 @pytest.mark.django_db
@@ -284,3 +345,31 @@ def test_category_count_reaches_all_ancestors():
     assert product_document(loaded, [], category_map)["category_ids"] == document["category_ids"]
     root_id = FormaCategory.objects.get(external_id=1).category_id
     assert Product.objects.filter(Clause("category_ids", "=", root_id).django()).count() == 1
+
+
+@pytest.mark.django_db
+def test_confirmed_forma_catalog_tree_preserves_sort_and_image_path():
+    tree = [{
+        "comId": 19, "sort": 4, "id": 540, "parentId": 0,
+        "active": True, "img": "19/540.jpg", "title": "Автомобільне кріплення",
+        "childElements": [{
+            "comId": 19, "sort": 10, "id": 559, "parentId": 540,
+            "active": True, "img": "19/559.jpg", "title": "Автомобільне кріплення",
+            "childElements": [{
+                "comId": 19, "sort": 3, "id": 560, "parentId": 559,
+                "active": True, "img": "19/560.jpg", "title": "Елементи кріплення",
+                "itemGroup": "Автокріплення", "itemSubGroup": "Елементи кріплення",
+                "childElements": [],
+            }],
+        }],
+    }]
+    leaves = sync_categories(tree)
+    assert [leaf.external_id for leaf in leaves] == [560]
+    root = FormaCategory.objects.get(external_id=540)
+    middle = FormaCategory.objects.get(external_id=559)
+    leaf = leaves[0]
+    assert (root.category.sort, middle.category.sort, leaf.category.sort) == (4, 10, 3)
+    assert leaf.category.parent_id == middle.category_id
+    assert middle.category.parent_id == root.category_id
+    assert leaf.source_image_path == "19/560.jpg"
+    assert leaf.item_group == "Автокріплення"

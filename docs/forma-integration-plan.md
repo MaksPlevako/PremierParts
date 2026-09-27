@@ -13,7 +13,7 @@ PremierParts використовує Django ORM і Django migrations (не SQLA
 
 ## Синхронізація
 
-1. `FormaClient` із токеном з environment, timeout, обмеженими retry для 429/5xx, обробкою 401 та керованою паралельністю. Відомі з техзавдання POST `https://ecom.ad.ua/api/items/ByTreeId` (тіло — JSON number) і POST `https://ecom.ad.ua/api/Catalog/ItemVehicles` (тіло — JSON string).
+1. `FormaClient` із токеном з environment, timeout, обмеженими retry для 429/5xx, обробкою 401 та керованою паралельністю. Відомі POST `https://ecom.ad.ua/api/content/Catalog` (дерево; метод підтверджено відповіддю `Allow: POST`), POST `https://ecom.ad.ua/api/items/ByTreeId` (тіло — JSON number) і POST `https://ecom.ad.ua/api/Catalog/ItemVehicles` (тіло — JSON string).
 2. FULL: рекурсивно обійти дерево, оновити категорії, для листків отримати товари, характеристики, залишки, фото та сумісність. Обробляти пакетами, продовжувати після помилки окремого товару, нічого не видаляти жорстко.
 3. FAST: за збереженими leaf category ID оновити ціни та залишки без повторного запиту фото/авто.
 4. Фото завантажувати у `MEDIA_ROOT` лише після підтвердження base URL. Використовувати стабільний шлях/`source_url`, перевіряти тип і розмір, повторний sync не має дублювати файли.
@@ -29,7 +29,7 @@ PremierParts використовує Django ORM і Django migrations (не SQLA
 
 ## Непідтверджені деталі Forma
 
-Потрібні Network HAR або точні URL, метод, payload і приклад відповіді для дерева категорій; підтверджений base URL фото; за можливості login/refresh endpoint та endpoint додаткових фото. До отримання цих даних URL не вигадувати. Секрети вводяться лише через `.env`/secret storage, не в HAR і не в Git.
+Отримано приклад відповіді POST дерева: масив із рекурсивними `childElements`, `sort` та відносним `img`. Підтверджено base URL фото товарів `https://img2.ad.ua/imgs/` та категорій `https://img2.ad.ua/imgs/group-pic/`: обидва приклади повертають JPEG із HTTP 200. Потрібні приклад тіла запиту дерева (або підтвердження, що воно порожнє); за можливості login/refresh endpoint та endpoint додаткових фото. Секрети вводяться лише через `.env`/secret storage, не в HAR і не в Git.
 
 ## Перевірка
 

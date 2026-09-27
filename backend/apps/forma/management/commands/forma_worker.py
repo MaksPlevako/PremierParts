@@ -26,9 +26,7 @@ def schedule_due_jobs():
     fast_hours = max(1, int(os.environ.get("FORMA_FAST_INTERVAL_HOURS", "4")))
     last_full = FormaSyncJob.objects.filter(mode="full").order_by("-created_at").first()
     last_any = FormaSyncJob.objects.order_by("-created_at").first()
-    if os.environ.get("FORMA_CATEGORY_TREE_URL") and (
-        not last_full or last_full.created_at < now - timedelta(hours=full_hours)
-    ):
+    if not last_full or last_full.created_at < now - timedelta(hours=full_hours):
         FormaSyncJob.objects.create(mode="full")
     elif FormaCategory.objects.filter(is_leaf=True, active=True).exists() and (
         not last_any or last_any.created_at < now - timedelta(hours=fast_hours)
