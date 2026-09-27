@@ -262,10 +262,11 @@ def legacy_resolve(request):
 
 
 def promotion_products_q(promo: Promotion) -> Q:
-    cat_ids = list(promo.categories.values_list("id", flat=True))
+    from .services.category_hierarchy import category_and_descendant_ids
+
+    cat_ids = category_and_descendant_ids(promo.categories.values_list("id", flat=True))
     return (
         Q(id__in=promo.products.values("id"))
         | Q(category_id__in=cat_ids)
-        | Q(category__parent_id__in=cat_ids)
         | Q(manufacturer_id__in=promo.manufacturers.values("id"))
     )

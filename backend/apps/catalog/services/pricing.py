@@ -5,6 +5,8 @@ from decimal import ROUND_DOWN, Decimal
 
 from apps.content.models import Promotion
 
+from .category_hierarchy import category_and_descendant_ids, category_children
+
 
 @dataclass(frozen=True)
 class ActivePromotion:
@@ -23,8 +25,7 @@ class ActivePromotion:
             return True
         if product.category_id in self.category_ids:
             return True
-        parent_id = product.category.parent_id if product.category_id else None
-        return bool(parent_id and parent_id in self.category_ids)
+        return False
 
 
 @dataclass(frozen=True)
@@ -41,11 +42,13 @@ class PriceInfo:
 
 
 def live_promotions() -> list[ActivePromotion]:
-    promos = (
+    promos = list(
         Promotion.objects.live()
         .filter(discount_percent__gt=0)
         .prefetch_related("products", "categories", "manufacturers")
     )
+    categories_by_promo = {p.id: [category.id for category in p.categories.all()] for p in promos}
+    children = category_children() if any(categories_by_promo.values()) else {}
     return [
         ActivePromotion(
             id=p.id,
@@ -53,7 +56,7 @@ def live_promotions() -> list[ActivePromotion]:
             title=p.title,
             percent=p.discount_percent,
             product_ids=frozenset(x.id for x in p.products.all()),
-            category_ids=frozenset(x.id for x in p.categories.all()),
+            category_ids=frozenset(category_and_descendant_ids(categories_by_promo[p.id], children=children)),
             manufacturer_ids=frozenset(x.id for x in p.manufacturers.all()),
         )
         for p in promos

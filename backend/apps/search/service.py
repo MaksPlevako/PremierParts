@@ -7,6 +7,7 @@ from dataclasses import dataclass, field, replace
 from django.db.models import Count, Q
 
 from apps.catalog.models import CarModel, Category, Generation, Make, Manufacturer, PartNumber, Product
+from apps.catalog.services.category_hierarchy import category_and_descendant_ids
 from apps.catalog.services.pricing import live_promotions
 from apps.catalog.services.queries import car_ref, card_queryset, cards_by_ids, product_cards
 from apps.content.models import Promotion
@@ -37,18 +38,7 @@ class Clause:
     def django(self) -> Q:
         f, v = self.field, self.value
         if f == "category_ids":
-            children = {}
-            for category_id, parent_id in Category.objects.order_by().values_list("id", "parent_id"):
-                children.setdefault(parent_id, []).append(category_id)
-            descendants = set()
-            pending = [v]
-            while pending:
-                category_id = pending.pop()
-                if category_id in descendants:
-                    continue
-                descendants.add(category_id)
-                pending.extend(children.get(category_id, []))
-            return Q(category_id__in=descendants)
+            return Q(category_id__in=category_and_descendant_ids([v]))
         if f == "make_ids":
             return Q(fitments__generation__model__make_id=v)
         if f == "model_ids":

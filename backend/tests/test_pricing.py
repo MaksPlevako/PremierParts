@@ -51,6 +51,20 @@ def test_category_promotion_applies_to_child_category(headlight):
 
 
 @pytest.mark.django_db
+def test_category_promotion_reaches_deep_forma_categories(headlight):
+    from apps.catalog.views import promotion_products_q
+
+    leaf = Category.objects.create(name="Вкладена категорія Forma", slug="forma-deep-test", parent=headlight.category)
+    headlight.category = leaf
+    headlight.save(update_fields=["category"])
+    promo = _promo(15)
+    promo.categories.add(leaf.parent.parent)
+
+    assert effective_price(headlight, live_promotions()).discount_percent == 15
+    assert Product.objects.filter(promotion_products_q(promo)).get() == headlight
+
+
+@pytest.mark.django_db
 def test_biggest_discount_wins(headlight):
     _promo(10).manufacturers.add(headlight.manufacturer)
     _promo(20).products.add(headlight)
