@@ -137,7 +137,7 @@ class FormaClient:
         parsed_base = urlparse(base)
         if parsed_base.scheme != "https" or not parsed_base.netloc:
             raise FormaConfigurationError("Forma image base URL має використовувати HTTPS")
-        url = urljoin(base.rstrip("/") + "/", path)
+        url = urljoin(base.rstrip("/") + "/", path.lstrip("/"))
         parsed_url = urlparse(url)
         if parsed_url.scheme != "https" or parsed_url.netloc != parsed_base.netloc:
             raise FormaConfigurationError("Forma photo URL має належати налаштованому хосту")

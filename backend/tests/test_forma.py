@@ -124,6 +124,9 @@ def test_image_url_defaults_to_confirmed_product_host(monkeypatch):
         assert client.image_url("tcd-com/19000/0001G145.jpg?46290203") == (
             "https://img2.ad.ua/imgs/tcd-com/19000/0001G145.jpg?46290203"
         )
+        assert client.image_url("/tcd-com/19/MR/MRVI0052.jpg?46290203") == (
+            "https://img2.ad.ua/imgs/tcd-com/19/MR/MRVI0052.jpg?46290203"
+        )
         assert client.category_image_url("19/540.jpg") == "https://img2.ad.ua/imgs/group-pic/19/540.jpg"
 
 
